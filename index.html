@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Get Service Stats</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!--<link rel="icon" href="/img/fastly/black_stopwatch_60x60.png">-->
+    <link rel="icon" href="https://cdn.glitch.com/f88f0196-294f-4200-af1f-06216157baa8%2Fstopwatch_black_60px.png?v=1563811885582">
+    <!--<link rel="icon" href="https://developer.fastly.com/favicon-32x32.png?v=c22d4a3eab3c11d8e032fe7663bfa52d" type="image/png">-->
+
+    <!-- Bootstrap CSS -->
+    <!--
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" />
+    -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/bootstrap-datepicker.min.css" />
+    <link rel="stylesheet" href="/css/my_styles.css" />
+    <style type="text/css">
+      .obscure { display: none !important}
+      .not-obscured { margin: 1em; }
+    </style>
+    <script>
+      console.info(':-)');
+    </script>
+  </head>
+  <body onload="initialize()">
+    <h1 class="not-obscured">
+      Work in Progress
+    </h1>
+    <header ip-blocked="" demo-running="false" class="obscure">
+      <nav class="navbar navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">
+          <img src="/img/speedometer-white-60.svg" alt="">
+          <span>Get Origin Bandwidth</span>
+        </a>
+        <img src="/img/help.svg">
+      </nav>
+    </header>
+    <section class="user-inputs obscure">
+      <div class="container">
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">API Key</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="password" name="password" class="form-control required-input" id="apiKey">
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded pseudo-readonly">
+                    <label class="col-sm-4 col-form-label bg-light border-right">API Key User Role</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control" id="userRole" readonly="readonly">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Input ID Type</label>
+                    <div class="col-sm-8 px-2">
+                      <select class="form-control selectpicker" id="idType">
+                        <option value="customer">Customer ID</option>
+                        <option value="service" selected>Service ID</option>
+                      </select>
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Service ID</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control input-id-type-dependent" id="serviceId" readonly="readonly">
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded pseudo-readonly">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Service Name</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control input-id-type-dependent text-truncate" id="serviceName" readonly="readonly">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Customer ID</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control input-id-type-dependent" id="customerId" readonly="readonly">
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded pseudo-readonly">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Customer Name</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control input-id-type-dependent text-truncate" id="customerName" readonly="readonly">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">From Date</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control date-picker required-input hasDatepicker" id="fromDate" readonly="readonly">
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">To Date</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control date-picker required-input hasDatepicker" id="toDate" readonly="readonly">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded pseudo-readonly">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Days of Data</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="text" class="form-control" id="elapsedDays" readonly="readonly">
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right" for="averageDivisor">Average Divisor</label>
+                    <div class="col-sm-8 px-2">
+                      <input type="number" class="form-control required-input" id="averageDivisor" value="1" min="1" step="1">
+                    </div>
+              </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Bandwidth Format</label>
+                    <div class="col-sm-8 px-2">
+                      <select class="form-control selectpicker" id="bytesFormat">
+                        <option value="abbreviated" selected>Abbreviated (1.235 TB)</option>
+                        <option value="comma-separated">Comma Separated (1,234,567,890)</option>
+                        <option value="integer">Integer (1234567890)</option>
+                      </select>
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Adjust for Shielding</label>
+                    <div class="col-sm-8 px-2">
+                      <select class="form-control selectpicker" id="shieldingMultiplier">
+                        <option value="1">Count all of Backend BW if Shielding</option>
+                        <option value="0.5" selected>Count half of Backend BW if Shielding</option>
+                      </select>
+                    </div>
+              </div>
+          </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Request Format</label>
+                    <div class="col-sm-8 px-2">
+                      <select class="form-control selectpicker" id="requestsFormat">
+                        <option value="comma-separated">Comma Separated (1,234,567,890)</option>
+                        <option value="integer">Integer (1234567890)</option>
+                      </select>
+                    </div>
+              </div>  
+            </div>
+            <div class="col-6 px-3">
+                <div class="form-group mx-0 row border rounded">
+                    <label class="col-sm-4 col-form-label bg-light border-right">Export Footer</label>
+                    <div class="col-sm-8 px-2 pseudo-disabled-hack">
+                      <div class="custom-control custom-checkbox">
+                        <div class="form-control pseudo-disabled-hack">
+                          <input type="checkbox" class="custom-control-input" id="export-footer" checked>
+                          <label class="custom-control-label" for="export-footer">Append summary information</label>
+                        </div>
+                      </div>
+                    </div>
+              </div>  
+            </div>
+        </div>
+
+      </div>
+    </section>
+    <section class="obscure">
+      <div class="form-group row">
+        <div class="col text-center">
+          <button type="button" class="btn btn-primary normally-not-hidden" id="get-data" disabled>Get Data</button>
+          <button type="button" class="btn btn-danger hidden" id="halt-get-data">Halt Getting Data</button>
+          <button type="button" class="btn btn-secondary normally-not-hidden" id="select-waf-services">Select WAF Services</button>
+          <button type="button" class="btn btn-secondary normally-not-hidden" id="export-data">Export Selected Data</button>
+          <button type="button" class="btn btn-secondary normally-not-hidden" id="clear-data">Clear Data</button>
+          <button type="button" class="btn btn-secondary normally-not-hidden" id="reload-page">Reload Page</button>
+          <input type="checkbox" class="hidden" id="kill-switch" title="Kill Switch">
+          <a download="origin_bw.csv" class="hidden" id="hiddenDownloadLink">Download</a>
+        </div>
+      </div>
+      <div class="form-group row">
+        <div class="col-sm-12 form-progress-holder">
+          <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated customer-progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="results hidden obscure">
+      <h3>Selected Service Totals</h3>
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped table-sm" id="service-totals"></table>
+        </div>
+      </div>
+    </section>
+    
+    <section class="results hidden obscure">
+      <h3>Service Data</h3>
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped table-sm" id="service-data"></table>
+        </div>
+      </div>
+    </section>
+    
+    <section class="hidden obscure">
+      <pre class="pre-scrollable border rounded mb-0" style="padding: 6px 12px;" id="output">&nbsp;</pre>
+    </section>
+    
+    <!-- Button to Open the Modal -->
+    <button id="modal-button" type="button" class="btn btn-danger hidden bs-alert obscure" data-toggle="modal" data-target="#myModal">
+      Open modal
+    </button>
+    <!-- The Modal -->
+    <div class="modal fade obscure" id="myModal">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Modal Heading</h4>
+            <button type="button" class="close hidden" data-dismiss="modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            Modal body..
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger bs-alert" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="banner-content-obscure" class="hidden">
+      <div class="banner-content">
+        <p>
+          FOR INTERNAL FASTLY USE ONLY
+        </p>
+        <img src="/img/fastly.svg" width="360" height="180">
+        <p>
+          NOT FOR EXTERNAL DISTRIBUTION
+        </p>
+      </div>
+    </div>
+    <div id="help-content obscure" class="hidden">
+      <h5>
+        Basic usage:
+      </h5>
+      <ol>
+        <li>Enter your Fastly <strong>API Key</strong> - an "admin", "engineer", or "superuser" role is needed</li>
+        <li>Select the <strong>Input ID Type</strong> to either get the bandwidth for a specified Service or all Services for a specified Customer</li>
+        <li>Enter a <strong>Service ID</strong> or <strong>Customer ID</strong> based on selection from the previous step</li>
+        <li>Click the "Get Data" button to, well, get data</li>
+        <li>Use the selection checkboxes in the first column of the data table to include or exclude a Service's bandwidth in the bandwidth totals</li>
+        <li>Click the "Export Selected Data" button to save data to a CSV file</li>
+      </ol>
+      <h5>
+        Optional adjustments:
+      </h5>
+      <ul>
+        <li>Change the date range of the data by changing the <strong>From Date</strong> and <strong>To Date</strong></li>
+        <li>Average your bandwidth by setting the <strong>Average Divisor</strong>, e.g. set the date range to 2 months and then set the <strong>Average Divisor</strong> to "2" to get a rough monthly average</li>
+        <li>Change the <strong>Adjust for Shielding</strong> setting so that origin bandwidth is not "double counted" when Shielding is configured on a Service</li>
+        <li>Change the <strong>Append summary information</strong> setting to include or exclude the tool settings at the bottom of your CSV export file</li>
+        <li>Click the "Select WAF Services" button to only select the WAF enabled Services</li>
+      </ul>
+      <h5>Display settings:</h5>
+      <ul>
+        <li>Change the <strong>Bandwidth Format</strong> setting to control how the bandwidth value is displayed</li>
+        <li>Click the up or down arrows (⇧<span class="flip">⇧</span>) in the data table header row to sort the data by that columns value in ascending or descending order, respectively</li>
+      </ul>
+    </div>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/bootstrap-datepicker.min.js"></script>
+    <script src="/js/my_scripts.js" defer></script>
+    <script src="/js/my_init_scripts.js" defer></script>
+  </body>
+</html>
