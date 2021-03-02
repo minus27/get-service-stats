@@ -109,7 +109,7 @@ function initialize() {
   
   // Set Dev Override if necessary
   
-  let bDevMode = document.cookie.split(';').some((item) => item.includes('backend=F_content'));
+  let bDevMode = document.cookie.split(';').some((item) => item.includes('DevMode=1'));
   if (location.hostname == 'get-service-stats.global.ssl.fastly.net') {
     $( '.obscure' ).removeClass('obscure');
     $( '.not-obscured' ).addClass('obscure');
