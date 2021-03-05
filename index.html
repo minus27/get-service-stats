@@ -2,10 +2,8 @@
 <html lang="en">
   <head>
     <title>Get Service Stats</title>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!--<link rel="icon" href="/img/fastly/black_stopwatch_60x60.png">-->
     <link rel="icon" href="https://cdn.glitch.com/f88f0196-294f-4200-af1f-06216157baa8%2Fstopwatch_black_60px.png?v=1563811885582">
     <!--<link rel="icon" href="https://developer.fastly.com/favicon-32x32.png?v=c22d4a3eab3c11d8e032fe7663bfa52d" type="image/png">-->
 
@@ -30,15 +28,51 @@
       Work in Progress
     </h1>
     <header ip-blocked="" demo-running="false" class="obscure">
-      <nav class="navbar navbar-dark bg-dark">
+      <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
         <a class="navbar-brand" href="#">
           <img src="/img/speedometer-white-60.svg" alt="">
-          <span>Get Origin Bandwidth</span>
+          <span>Get Service Stats<span class="dev-mode"> (DEV MODE)</span></span>
         </a>
-        <img src="/img/help.svg">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar1">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar1">
+          <ul class="navbar-nav ml-auto">
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarQuickSelectMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Quick Select
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarQuickSelectMenuLink">
+                  <a class="dropdown-item skip" href="#" select-by="waf">...all WAF Services</a>
+                  <a class="dropdown-item skip" href="#" select-by="edge-compute">...all C@E Services</a>
+                  <a class="dropdown-item skip" href="#" select-by="shielding">...all Shielding Services</a>
+                </div>
+              </li>
+              <li class="nav-item dropdown  pull-left">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarSettingsMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Settings
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarSettingsMenuLink">
+                  <a class="dropdown-item" href="#" id="settings-cookies">Cookies</a>
+                  <a class="dropdown-item" href="#" id="settings-displayed-fields">Displayed Data Fields</a>
+                  <a class="dropdown-item" href="#" id="settings-number-formats">Number Formats</a>
+                </div>
+              </li>
+              <li class="nav-item dropdown  pull-left">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarHelpMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Help
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarHelpMenuLink">
+                  <a class="dropdown-item" href="#" id="help-usage">Basic Usage</a>
+                  <a class="dropdown-item" href="#" id="help-data-fields">Service Data Fields</a>
+                </div>
+              </li>
+          </ul>
+        </div>
       </nav>
     </header>
     <section class="user-inputs obscure">
+      <input type="hidden" id="idType">
       <div class="container">
 
         <div class="row">
@@ -63,24 +97,9 @@
         <div class="row">
             <div class="col-6 px-3">
                 <div class="form-group mx-0 row border rounded">
-                    <label class="col-sm-4 col-form-label bg-light border-right">Input ID Type</label>
-                    <div class="col-sm-8 px-2">
-                      <select class="form-control selectpicker" id="idType">
-                        <option value="customer">Customer ID</option>
-                        <option value="service" selected>Service ID</option>
-                      </select>
-                    </div>
-              </div>  
-            </div>
-            <div class="col-6 px-3"></div>
-        </div>
-
-        <div class="row">
-            <div class="col-6 px-3">
-                <div class="form-group mx-0 row border rounded">
                     <label class="col-sm-4 col-form-label bg-light border-right">Service ID</label>
                     <div class="col-sm-8 px-2">
-                      <input type="text" class="form-control input-id-type-dependent" id="serviceId" readonly="readonly">
+                      <input type="text" class="form-control input-id-type-dependent id-type" id="serviceId" readonly="readonly" prompt="Click to set Service ID">
                     </div>
               </div>  
             </div>
@@ -99,7 +118,7 @@
                 <div class="form-group mx-0 row border rounded">
                     <label class="col-sm-4 col-form-label bg-light border-right">Customer ID</label>
                     <div class="col-sm-8 px-2">
-                      <input type="text" class="form-control input-id-type-dependent" id="customerId" readonly="readonly">
+                      <input type="text" class="form-control input-id-type-dependent id-type" id="customerId" readonly="readonly" prompt="Click to set Customer ID">
                     </div>
               </div>  
             </div>
@@ -152,16 +171,18 @@
         </div>
 
         <div class="row">
-            <div class="col-6 px-3">
-                <div class="form-group mx-0 row border rounded">
-                    <label class="col-sm-4 col-form-label bg-light border-right">Bandwidth Format</label>
-                    <div class="col-sm-8 px-2">
-                      <select class="form-control selectpicker" id="bytesFormat">
-                        <option value="abbreviated" selected>Abbreviated (1.235 TB)</option>
-                        <option value="comma-separated">Comma Separated (1,234,567,890)</option>
-                        <option value="integer">Integer (1234567890)</option>
-                      </select>
+          
+          <div class="col-6 px-3">
+              <div class="form-group mx-0 row border rounded">
+                  <label class="col-sm-4 col-form-label bg-light border-right">Export Footer</label>
+                  <div class="col-sm-8 px-2 pseudo-disabled-hack">
+                    <div class="custom-control custom-checkbox">
+                      <div class="form-control pseudo-disabled-hack">
+                        <input type="checkbox" class="custom-control-input" id="export-footer" checked>
+                        <label class="custom-control-label" for="export-footer">Append summary information</label>
+                      </div>
                     </div>
+                  </div>
               </div>  
             </div>
             <div class="col-6 px-3">
@@ -177,33 +198,6 @@
           </div>
         </div>
 
-        <div class="row">
-            <div class="col-6 px-3">
-                <div class="form-group mx-0 row border rounded">
-                    <label class="col-sm-4 col-form-label bg-light border-right">Request Format</label>
-                    <div class="col-sm-8 px-2">
-                      <select class="form-control selectpicker" id="requestsFormat">
-                        <option value="comma-separated">Comma Separated (1,234,567,890)</option>
-                        <option value="integer">Integer (1234567890)</option>
-                      </select>
-                    </div>
-              </div>  
-            </div>
-            <div class="col-6 px-3">
-                <div class="form-group mx-0 row border rounded">
-                    <label class="col-sm-4 col-form-label bg-light border-right">Export Footer</label>
-                    <div class="col-sm-8 px-2 pseudo-disabled-hack">
-                      <div class="custom-control custom-checkbox">
-                        <div class="form-control pseudo-disabled-hack">
-                          <input type="checkbox" class="custom-control-input" id="export-footer" checked>
-                          <label class="custom-control-label" for="export-footer">Append summary information</label>
-                        </div>
-                      </div>
-                    </div>
-              </div>  
-            </div>
-        </div>
-
       </div>
     </section>
     <section class="obscure">
@@ -211,7 +205,6 @@
         <div class="col text-center">
           <button type="button" class="btn btn-primary normally-not-hidden" id="get-data" disabled>Get Data</button>
           <button type="button" class="btn btn-danger hidden" id="halt-get-data">Halt Getting Data</button>
-          <button type="button" class="btn btn-secondary normally-not-hidden" id="select-waf-services">Select WAF Services</button>
           <button type="button" class="btn btn-secondary normally-not-hidden" id="export-data">Export Selected Data</button>
           <button type="button" class="btn btn-secondary normally-not-hidden" id="clear-data">Clear Data</button>
           <button type="button" class="btn btn-secondary normally-not-hidden" id="reload-page">Reload Page</button>
@@ -227,7 +220,7 @@
         </div>
       </div>
     </section>
-    <section class="results hidden obscure">
+    <section class="results hidden obscure service-tables" category-default>
       <h3>Selected Service Totals</h3>
       <div class="card">
         <div class="table-responsive">
@@ -236,7 +229,7 @@
       </div>
     </section>
     
-    <section class="results hidden obscure">
+    <section class="results hidden obscure service-tables" category-default>
       <h3>Service Data</h3>
       <div class="card">
         <div class="table-responsive">
@@ -250,16 +243,16 @@
     </section>
     
     <!-- Button to Open the Modal -->
-    <button id="modal-button" type="button" class="btn btn-danger hidden bs-alert obscure" data-toggle="modal" data-target="#myModal">
+    <button id="modal-button" type="button" class="btn btn-danger hidden bs-alert obscure" data-toggle="modal" data-target="#modal-generic">
       Open modal
     </button>
-    <!-- The Modal -->
-    <div class="modal fade obscure" id="myModal">
+    <!-- Generic Modal -->
+    <div class="modal fade obscure" id="modal-generic">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-          <div class="modal-header">
+          <div class="modal-header bg-danger text-light">
             <h4 class="modal-title">Modal Heading</h4>
-            <button type="button" class="close hidden" data-dismiss="modal">&times;</button>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
           <div class="modal-body">
             Modal body..
@@ -270,49 +263,225 @@
         </div>
       </div>
     </div>
-    <div id="banner-content-obscure" class="hidden">
-      <div class="banner-content">
-        <p>
-          FOR INTERNAL FASTLY USE ONLY
-        </p>
-        <img src="/img/fastly.svg" width="360" height="180">
-        <p>
-          NOT FOR EXTERNAL DISTRIBUTION
-        </p>
+    <!-- Fastly Only Modal -->
+    <div class="modal fade obscure" id="modal-fastly-only">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body banner-content">
+            <p>FOR INTERNAL FASTLY USE ONLY</p>
+            <img src="/img/fastly.svg" width="360" height="180">
+            <p>NOT FOR EXTERNAL DISTRIBUTION</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger bs-alert" data-dismiss="modal">Close</button>
+          </div>
+        </div>
       </div>
     </div>
-    <div id="help-content obscure" class="hidden">
-      <h5>
-        Basic usage:
-      </h5>
-      <ol>
-        <li>Enter your Fastly <strong>API Key</strong> - an "admin", "engineer", or "superuser" role is needed</li>
-        <li>Select the <strong>Input ID Type</strong> to either get the bandwidth for a specified Service or all Services for a specified Customer</li>
-        <li>Enter a <strong>Service ID</strong> or <strong>Customer ID</strong> based on selection from the previous step</li>
-        <li>Click the "Get Data" button to, well, get data</li>
-        <li>Use the selection checkboxes in the first column of the data table to include or exclude a Service's bandwidth in the bandwidth totals</li>
-        <li>Click the "Export Selected Data" button to save data to a CSV file</li>
-      </ol>
-      <h5>
-        Optional adjustments:
-      </h5>
-      <ul>
-        <li>Change the date range of the data by changing the <strong>From Date</strong> and <strong>To Date</strong></li>
-        <li>Average your bandwidth by setting the <strong>Average Divisor</strong>, e.g. set the date range to 2 months and then set the <strong>Average Divisor</strong> to "2" to get a rough monthly average</li>
-        <li>Change the <strong>Adjust for Shielding</strong> setting so that origin bandwidth is not "double counted" when Shielding is configured on a Service</li>
-        <li>Change the <strong>Append summary information</strong> setting to include or exclude the tool settings at the bottom of your CSV export file</li>
-        <li>Click the "Select WAF Services" button to only select the WAF enabled Services</li>
-      </ul>
-      <h5>Display settings:</h5>
-      <ul>
-        <li>Change the <strong>Bandwidth Format</strong> setting to control how the bandwidth value is displayed</li>
-        <li>Click the up or down arrows (⇧<span class="flip">⇧</span>) in the data table header row to sort the data by that columns value in ascending or descending order, respectively</li>
-      </ul>
+    <!-- Usage Modal -->
+    <div class="modal fade obscure" id="modal-help-usage">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help: Basic Usage</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <h5>
+              Basic usage:
+            </h5>
+            <ol>
+              <li>Enter your Fastly <strong>API Key</strong> - an "admin", "engineer", or "superuser" role is needed</li>
+              <li>Select the <strong>Input ID Type</strong> to either get the bandwidth for a specified Service or all Services for a specified Customer</li>
+              <li>Enter a <strong>Service ID</strong> or <strong>Customer ID</strong> based on selection from the previous step</li>
+              <li>Click <button type="button" class="btn btn-primary">Get Data</button> to, well, get data</li>
+              <li>Use the selection checkboxes in the first column of the data table to include or exclude a Service's bandwidth in the bandwidth totals</li>
+              <li>Click <button type="button" class="btn btn-secondary">Export Selected Data</button> to save data to a CSV file</li>
+            </ol>
+            <h5>
+              Optional adjustments:
+            </h5>
+            <ul>
+              <li>Change the date range of the data by changing the <strong>From Date</strong> and <strong>To Date</strong></li>
+              <li>
+                Average your bandwidth by setting the <strong>Average Divisor</strong>, e.g. set the date range to 2 months
+                and then set the <strong>Average Divisor</strong> to "2" to get a rough monthly average
+              </li>
+              <li>Change the <strong>Adjust for Shielding</strong> setting so that origin bandwidth is not "double counted" when Shielding is configured on a Service</li>
+              <li>Change the <strong>Append summary information</strong> setting to include or exclude the tool settings at the bottom of your CSV export file</li>
+              <li>Click <button type="button" class="btn btn-secondary">Select WAF Services</button> to only select the WAF enabled Services</li>
+            </ul>
+            <h5>Display settings:</h5>
+            <ul>
+              <li>Change the <strong>Bandwidth Format</strong> setting to control how the bandwidth value is displayed</li>
+              <li>
+                Click the up or down arrows (⇧<span class="flip">⇧</span>) in the data table header row 
+                to sort the data by that columns value in ascending or descending order, respectively
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
+    <!-- Data Fields Modal -->
+    <div class="modal fade obscure" id="modal-help-data-fields">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help: Service Data Fields</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              The Service Data Fields are derived from the Fastly Historical Statistics as follows:
+            </p>
+<!---->
+            <div class="row justify-content-center">
+              <div class="col-auto">
+<!---->
+                <table class="table table-bordered table-striped table-sm w-auto">
+                  <thead class="thead-darkish dev-override-color">
+                    <tr>
+                      <th>Service Data Field</th>
+                      <th>Fastly Historical Statistic(s)</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+<!---->
+              </div>
+            </div>
+<!---->
+            <div>
+              Note(s):
+              <ul style="margin-bottom: 0">
+                <li>
+                  The fields prefixed by "<strong>Ave</strong>" are average fields whose values are calculated
+                  by dividing their corresponding non-average fields by the specified <strong>Average Divisor</strong>.
+                  <ul>
+                    <li>
+                      For example, if the <strong>Average Divisor</strong> is set to <strong>3</strong>,
+                      the <strong>Ave Total Requests</strong> = <strong>Total Requests</strong> / <strong>3</strong>.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  The <strong>Backend Request BW</strong> and <strong>Ave Backend Request BW</strong> fields, and only these fields,
+                  can be adjusted using the <strong>Adjust for Shielding</strong> option based on whether or not shielding is in use on a Service.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Display Settings Modal -->
+    <div class="modal fade obscure" id="modal-settings-displayed-fields">
+      <div class="modal-dialog modal-dialog-centered"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Settings: Displayed Data Fields</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+<!--
+            <div class="row justify-content-center">
+              <div class="col-auto">
+-->
+                <table class="table table-bordered table-striped table-sm">
+                  <thead class="thead-darkish dev-override-color">
+                    <tr>
+                      <th><input type="checkbox" onclick="selectCategories(this)"></th>
+                      <th>Category</th>
+                      <th>Included Service Data / Totals Field(s)</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+<!--
+              </div>
+            </div>
+-->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Number Formats Modal -->
+    <div class="modal fade obscure" id="modal-settings-number-formats">
+      <div class="modal-dialog modal-dialog-centered"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Settings: Number Formats</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+<!---->
+            <div class="row justify-content-center">
+              <div class="col-auto">
+<!---->
+                <table class="table table-bordered table-striped table-sm">
+                  <thead class="thead-darkish dev-override-color">
+                    <tr>
+                      <th>Number Type</th>
+                      <th>Format</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+<!---->
+              </div>
+            </div>
+<!---->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Cookies Modal -->
+    <div class="modal fade obscure" id="modal-settings-cookies">
+      <div class="modal-dialog modal-dialog-centered"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Settings: Cookies</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+<!---->
+            <div class="row justify-content-center">
+              <div class="col-auto">
+<!---->
+                <table class="table table-bordered table-striped table-sm">
+                  <thead class="thead-darkish dev-override-color">
+                    <tr>
+                      <th><input type="checkbox" class="disable-when-adding-cookie"></th>
+                      <th>Cookie Name</th>
+                      <th>Cookie Value</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <div class="mt-1 text-center hide-when-adding-cookie">
+                  <button type="button" class="btn btn-primary delete-cookies">Delete Selected Cookies</button>
+                  <button type="button" class="btn btn-primary add-cookie">Add New Cookie</button>
+                </div>
+                <div class="mt-1 text-center show-when-adding-cookie hidden">
+                  <button type="button" class="btn btn-primary save-new-cookie">Save</button>
+                  <button type="button" class="btn btn-primary cancel-new-cookie">Cancel</button>
+                </div>
+<!---->
+              </div>
+            </div>
+<!---->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Here there be scripts to load -->
     <script src="/js/jquery.min.js"></script>
     <script src="/js/popper.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
     <script src="/js/bootstrap-datepicker.min.js"></script>
+    <script src="/js/js.cookie.min.js"></script>
+    <script src="/js/my_app_cfg.js" defer></script>
     <script src="/js/my_scripts.js" defer></script>
     <script src="/js/my_init_scripts.js" defer></script>
   </body>
