@@ -5,41 +5,36 @@ var apiData = {}, statData = {totals:{},stats:{},data:{}}, svcData=[], tmpSvcDat
 var apiCallCounter = 0;
 var serviceData = [];
 
-/*
-
-tblCfgData Notes:
-
- * define in display order
- * "name" assumed to be unique - duplicate at your own risk
- * if "table" not specified, all tables assumed
- * if "default" not specified, 0 assumed
- * if "average" is true, an "average-..." field is created
- * if "formats" is specified, a subfield for each format is created
- 
- */
-const tblCfgData = [
-  {name: "services", title: "Services Selected", table:'totals', 'alt-key':'selected'},
-  {name: "select-service", table:'data', default:null},
-  {name: "service-id", title: "Service", csv: true, table:'data', default:""},
-  {name: "service-name", title: "Service Name", csv: true, table:'data', default:""},
-  {name: "total-requests", title: "Total Requests", formats: "integer,comma-separated", dataType:"requests", average:true},
-  {name: "delivered-bandwidth", title: "Delivered BW", formats: "integer,abbreviated,comma-separated", dataType:"bytes", average:true},
-  {name: "origin-fetches", title: "Origin Fetches", formats: "integer,comma-separated", dataType:"requests", average:true},
-  {name: "origin-fetch-bandwidth", title: "Origin Fetch BW", formats: "integer,abbreviated,comma-separated", dataType:"bytes", average:true},
-  {name: "origin-fetch-resp-bandwidth", title: "Origin Fetch Response BW", formats: "integer,abbreviated,comma-separated", dataType:"bytes", average:true},
-  {name: "backend-bandwidth", title: "Backend BW", formats: "integer,abbreviated,comma-separated", dataType:"bytes", average:true, adjust:true},
-  {name: "shielding", title: "Shielding", csv: true, table:'data', default:false},
-  {name: "waf", title: "WAF", csv: true, table:'data', default:false},
-  {name: "shieldings", title: "Shielding Count", table:'totals', 'alt-key':'shielding'},
-  {name: "wafs", title: "WAF Count", table:'totals', 'alt-key':'waf'},
-];
-
+var appCfg = {
+  data: [],
+  categories: [],
+  stats: [],
+  init: function() {
+    if (!appCfgData) throw new Error('appCfgData not found');
+    this.data = [...appCfgData];
+    this.data.filter(datum => 'stats' in datum).forEach(datum => {
+      datum.stats.split(',').forEach(stat => { if(!this.stats.includes(stat)) this.stats.push(stat); });
+    },this);
+    this.data.filter(datum => 'category' in datum).forEach(datum => {
+      let category = `category-${datum.category.replace(/ /g,'-').toLowerCase()}`;
+      if(!this.categories.includes(category)) this.categories.push(category);
+    },this);
+  },
+  getFieldForName: function(field, nameVal) {
+    let a = this.data.filter(datum => 'name' in datum ? (datum.name == nameVal) : false );
+    if (a.length == 0) throw new Error(`Name not found (${nameVal})`);
+    if (!(field in a[0])) throw new Error(`Field not found (${field}) for name (${nameVal})`);
+    return a[0][field];
+  }
+};
 
 function isObject(value) {
   return value && typeof value === 'object' && value.constructor === Object;
 }
 
-function commaFormat(i) {return i.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+function commaFormat(i) {
+  return i.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 
 function byteFormat(i) {
   var unit = ",KILO,MEGA,GIGA,TERA,PETA,EXA".split(",");
@@ -72,16 +67,20 @@ function addDays(date, days) {
 }
 
 function bootstrapAlert(txtTitle, txtBody, bGoLarge = false) {
+  let colJquery = $('#modal-generic');
   if (bGoLarge)
-    $( '.modal-dialog' ).addClass('modal-lg');
+    colJquery.find( '.modal-dialog' ).addClass('modal-lg');
   else
-    $( '.modal-dialog' ).removeClass('modal-lg');
-  if (txtTitle == '')
-    $( '.modal-header' ).addClass('hidden');
-  else
-    $( '.modal-header' ).removeClass('hidden');
-  $('.modal-title').html(txtTitle);
-  $('.modal-body').html(txtBody);
+    colJquery.find( '.modal-dialog' ).removeClass('modal-lg');
+  if (txtTitle == '') {
+    colJquery.find( '.modal-header' ).addClass('hidden');
+    colJquery.find( '.modal-footer' ).removeClass('hidden');
+  } else {
+    colJquery.find( '.modal-footer' ).addClass('hidden');
+    colJquery.find( '.modal-header' ).removeClass('hidden');
+  }
+  colJquery.find('.modal-title').html(`Error: ${txtTitle}`);
+  colJquery.find('.modal-body').html(txtBody);
   $('#modal-button').click();
 }
 
@@ -129,7 +128,7 @@ function xhrError(errMsgs,statusCode) {
     stateTransition();
     $('[data-dismiss="modal"]').off('click');
   })
-  bootstrapAlert('XHR Error',`${(statusCode in errMsgs) ? errMsgs[statusCode] : "Uknown Error"}<br>(HTTP Response Code = ${statusCode})`);
+  bootstrapAlert('XHR Issues',`${(statusCode in errMsgs) ? errMsgs[statusCode] : "Uknown Error"}<br>(HTTP Response Code = ${statusCode})`);
 }
 
 function getServiceInfo(nextState) {
@@ -167,6 +166,11 @@ function getServiceDetails(nextState) {
         tmpSvcData.wafCount = responseData.active_version.wafs.length;
       } catch(err) {
         tmpSvcData.wafCount = 0;
+      }
+      try {
+        tmpSvcData.edgeComputeCount = ('package' in responseData.active_version) ? 1 : 0;
+      } catch(err) {
+        tmpSvcData.edgeComputeCount = 0;
       }
       
       tmpSvcData.service_name = responseData.name;
@@ -235,7 +239,34 @@ function getServiceStats(fieldName, nextState) {
       let total = 0;
       responseData.data.forEach((o) => { total += o[fieldName]; });
       statData.stats[apiData.service_id][fieldName] = total;
-      ///console.log(`${apiData.service_id} / ${fieldName}: ${total}`)
+      //console.log(`${apiData.service_id} / ${fieldName}: ${total}`)
+      stateTransition(nextState);
+    } else {
+      xhrError({401:'Bad API Key',404:'Bad Service ID'},xhr.status);
+      console.log(`getServiceStats():  HTTP Error (Status = ${xhr.status})`);
+    }
+	});
+}
+
+function getAllServiceStats(nextState) {
+  var fromDateMinusOne = newDate(addDays(apiData.from_date,-1),true),
+      qs = `service_id=${apiData.service_id}\&from=${fromDateMinusOne}\&to=${apiData.to_date}\&by=day`,
+      url = `https://${location.hostname}/stats/service/SERVICE_ID?${qs}`;
+  //url += ((url.includes("?")) ? "&" : "?") + "HTTPBIN=1";
+  makeApiXhr("GET", url, null, function(xhr) {
+		if (xhr.status === 200) {
+      var responseData = JSON.parse(xhr.responseText);
+      //console.log(JSON.stringify(responseData,null,"  "));
+      appCfg.stats.forEach( stat => {
+        if (SAVE_STATS_DATA) {
+          if (!(apiData.service_id in statData.data)) statData.data[apiData.service_id] = {};
+          statData.data[apiData.service_id][stat] = Object.assign({}, responseData.data);
+        }
+        let total = 0;
+        responseData.data.forEach((o) => { total += o[stat]; });
+        statData.stats[apiData.service_id][stat] = total;
+        //console.log(`${apiData.service_id} / ${stat}: ${total}`)
+      });
       stateTransition(nextState);
     } else {
       xhrError({401:'Bad API Key',404:'Bad Service ID'},xhr.status);
@@ -260,7 +291,7 @@ function getUserInfo(nextState) {
 	});
 }
 
-function getCsvDataNew() {
+function getCsvData() {
   function quote(t) {
     let n = Number(t);
     return (t == '' || isNaN(n)) ? `"${t.replace(/"/g,'""')}"` : n;
@@ -323,54 +354,6 @@ function getCsvDataNew() {
   return(csvData.join('\n'));
 }
 
-function csvFormat(arrIn) {
-  if (!Array.isArray(arrIn)) arrIn = [arrIn];
-  let arrOut = [];
-  arrIn.forEach(function(item){arrOut.push(`"${item.replace(/"/g,'""')}"`);});
-  return arrOut.join(",");
-}
-
-function getCsvData() {
-  let csvData = [], csvDataRow = [], checkedRowClasses = [];
-  $('#service-data thead tr th[csv]').each(function(){
-    //csvDataRow.push( csvFormat( $(this).text() ) );
-    // Get first text node only to skip sort link labels...
-    csvDataRow.push( csvFormat( $(this)[0].childNodes[0].nodeValue ) );
-  });
-  csvData.push(csvDataRow.join(','));
-  
-  $('#service-data tbody .select-service:checked').each(function(){
-    checkedRowClasses.push($(this).parent().parent().attr('class'));
-  });
-  
-  checkedRowClasses.forEach(function(checkedRowClass){
-    csvDataRow=[];
-    $(`#service-data tbody .${checkedRowClass} td[csv]`).each(function(){
-      csvDataRow.push( csvFormat( $(this).text() ) );
-    });
-    csvData.push(csvDataRow.join(','));
-  });
-  
-  if (apiData.export_footer) {
-    csvData.push("");
-    csvData.push("");
-    csvData.push(csvFormat(["Customer ID:",`${$('#customerId').val()}`]));
-    csvData.push(csvFormat(["Customer Name:",`${$('#customerName').val()}`]));
-    csvData.push(csvFormat(["Services Selected:",`${$('#service-data tbody tr td input:checked').length} of ${$('#service-data tbody tr').length}`]));
-    csvData.push(csvFormat(["Total Origin Bandwidth:",`${$('#service-totals td.backend-bandwidth span.comma-separated').text()} bytes (${$('#service-totals td.backend-bandwidth span.abbreviated').text()})`]));
-    csvData.push(csvFormat(["Average Total Origin Bandwidth:",`${$('#service-totals td.average-backend-bandwidth span.comma-separated').text()} bytes (${$('#service-totals td.average-backend-bandwidth span.abbreviated').text()})`]));
-    csvData.push(csvFormat(["WAFs Selected:",`${$('#service-data tbody tr td.waf input:checked').length} of ${$('#service-data tbody tr td.waf input').length}`]));
-    csvData.push(csvFormat(["Total Origin Bandwidth:",`${$('#service-totals td.total-waf span.comma-separated').text()} bytes (${$('#service-totals td.total-waf span.abbreviated').text()})`]));
-    csvData.push(csvFormat(["Average Total Origin Bandwidth:",`${$('#service-totals td.average-waf span.comma-separated').text()} bytes (${$('#service-totals td.average-waf span.abbreviated').text()})`]));
-    csvData.push(csvFormat(["Average Divisor:",`${apiData.average_divisor}`]));
-    csvData.push(csvFormat(["Bandwidth Adjusted for Shielding:",`${(apiData.shielding_multiplier==1)?"No":"Yes"}`]));
-    csvData.push(csvFormat(["Date Range:",`${$('#fromDate').val()} to ${$('#toDate').val()}`]));
-    csvData.push(csvFormat(["Days of Data:",`${$('#elapsedDays').val()}`]));
-  }
-  
-  return(csvData.join('\n'));
-}
-
 var textFile = null;
 function makeTextFile(text) {
   var data = new Blob([text], {type: 'text/plain'});
@@ -404,9 +387,11 @@ function formatBytes(formatType,bytes) {
 }
 
 function updateSelectedServices(e) {
+  console.log('OK')
   switch(e.parentElement.tagName) {
     case "TH":
-      $( 'td .select-service' ).prop('checked',$( 'th .select-service' ).prop('checked'));
+      $( 'td .select-service' ).prop('checked',$( e ).prop('checked'));
+      serviceData.forEach(datum => datum.selected = $( e ).prop('checked'));
       break;
     case "TD":
       let rowIndex = getRowIndex(e);
@@ -457,24 +442,23 @@ var progressBar = { /* OK */
 }
 
 function disableControlsWhileGettingData(bGettingData) { /* OK */
-  "select,input".split(",").forEach(function(tag) {
-    $( `.user-inputs ${tag}` ).prop('disabled', bGettingData);
-    if (bGettingData) {
-      $( `.user-inputs ${tag}` ).parent().parent().addClass(`pseudo-disabled`);
-    } else {
-      $( `.user-inputs ${tag}` ).parent().parent().removeClass(`pseudo-disabled`);
-    }
-  });
   if (bGettingData) {
+    $('.user-inputs .form-group').addClass('pseudo-disabled')
+    $( `.user-inputs select` ).addClass(`pseudo-disabled`);
+    $( `.user-inputs input` ).addClass(`pseudo-disabled`);
     $( `.pseudo-disabled-hack` ).addClass(`pseudo-disabled`);
   } else {
-    $( `.pseudo-disabled-hack` ).removeClass(`pseudo-disabled`);
+    $( `.pseudo-disabled` ).removeClass(`pseudo-disabled`);
   }
+  $( `.user-inputs select` ).prop('disabled', bGettingData);
+  $( `.user-inputs input` ).prop('disabled', bGettingData);
   $( '#service-data input' ).prop('disabled', bGettingData);
   if (bGettingData) {
+    $( '[data-toggle=dropdown]' ).attr('data-toggle','dropdown-pseudodisabled');
     $( '.normally-not-hidden' ).hide();
     $( '#halt-get-data' ).fadeIn();
   } else {
+    $( '[data-toggle=dropdown-pseudodisabled]' ).attr('data-toggle','dropdown');
     $( '#halt-get-data' ).hide();
     $( '.normally-not-hidden' ).fadeIn();
   }
@@ -566,16 +550,9 @@ function stateTransition(state,nextState) { /* OK */
       if (DEBUG) console.log(`${state}: Making Parallel API Calls...`);
       var doFunction = [
         function() { getServiceDetails(nextState); },
-        function() { getServiceStats('requests',nextState); },
-        function() { getServiceStats('bandwidth',nextState); },
-        function() { getServiceStats('bereq_header_bytes',nextState); },
-        function() { getServiceStats('bereq_body_bytes',nextState); },
-        function() { getServiceStats('origin_fetches',nextState); },
-        function() { getServiceStats('origin_fetch_header_bytes',nextState); },
-        function() { getServiceStats('origin_fetch_body_bytes',nextState); },
-        function() { getServiceStats('origin_fetch_resp_header_bytes',nextState); },
-        function() { getServiceStats('origin_fetch_resp_body_bytes',nextState); },
+        function() { getAllServiceStats(nextState); },
       ];
+      //appCfg.stats.forEach(stat => { doFunction.push( function() { getServiceStats(stat,nextState); } ); });
       if ($('#customerName').val() == "") doFunction.push( function() { getCustomerInfo(nextState); } );
       apiCallCounter = doFunction.length;
       doFunction.forEach( f => f() );
@@ -593,26 +570,27 @@ function stateTransition(state,nextState) { /* OK */
       if (apiCallCounter != 0) return;
       if (DEBUG) console.log(`${state}: Post-processing data...`);
       let oStats = statData.stats[apiData.service_id],
-          oTotals = statData.totals[apiData.service_id],
-          bShielding = (tmpSvcData.backendShieldCount > 0),
-          bWaffing = (tmpSvcData.wafCount > 0);
+          oTotals = statData.totals[apiData.service_id];
       
       let serviceDataValue = {
         "service-id": apiData.service_id,
         "service-name": oTotals.service_name,
-        "total-requests": oStats.requests,
-        "delivered-bandwidth": oStats.bandwidth,
-        "origin-fetches": oStats.origin_fetches,
-        "origin-fetch-bandwidth": (oStats.origin_fetch_header_bytes + oStats.origin_fetch_body_bytes),
-        "origin-fetch-resp-bandwidth": (oStats.origin_fetch_resp_header_bytes + oStats.origin_fetch_resp_body_bytes),
-        "backend-bandwidth": (oStats.bereq_header_bytes + oStats.bereq_body_bytes),
-        "shielding": bShielding,
-        "waf": bWaffing,
+        "shielding": (tmpSvcData.backendShieldCount > 0),
+        "waf": (tmpSvcData.wafCount > 0),
+        "edge-compute": (tmpSvcData.edgeComputeCount > 0),
       };
+      
+      appCfg.data.filter(datum => 'stats' in datum).forEach(datum => {
+        serviceDataValue[datum.name] = 0;
+        datum.stats.split(',').forEach(stat => {
+          if (!(stat in oStats)) throw new Error(`Unknown stat (${stat})`);
+          serviceDataValue[datum.name] += oStats[stat];
+        });
+      });
       
       let rowIndex = serviceData.length;
       serviceData.push({selected: true, row: rowIndex});
-      tblCfgData.forEach( datum => {
+      appCfg.data.forEach( datum => {
         if (datum.name in serviceDataValue) serviceData[rowIndex][datum.name] = serviceDataValue[datum.name];
         if ('average' in datum && datum.average) {
           let averageValue =  Math.round( serviceDataValue[datum.name] / apiData.average_divisor );
@@ -645,7 +623,7 @@ function stateTransition(state,nextState) { /* OK */
       }
       return;
     default:
-      bootstrapAlert("Internal Error in stateTransition()", `Unknown state: "${state}"`);
+      bootstrapAlert("Internal Issue", `State Transition Error - Unknown State: "${state}"`);
       return;
   }
 }
@@ -788,6 +766,7 @@ function updateTables() {
               break;
             case 'shielding':
             case 'waf':
+            case 'edge-compute':
               totalsData[`${key}s`] += (val) ? 1 : 0;
               break;
             default:
@@ -797,6 +776,7 @@ function updateTables() {
       }
     })
   });
+  console.log('Table update - setting totals')
   // Display totals
   setTotals(totalsData);
 
@@ -808,7 +788,7 @@ function updateTables() {
 function updateTotals(rowData = null) { /* OK */
   const tableType = 'totals', idTbl = `service-${tableType}`, bResetData = (rowData == null), totalsData = {}, altKeys = {};
   if (bResetData) rowData = {};
-  tblCfgData.filter(datum => !('table' in datum) || datum.table == tableType).forEach( datum => {
+  appCfg.data.filter(datum => !('table' in datum) || datum.table == tableType).forEach( datum => {
     altKeys[datum.name] = ('alt-key' in datum) ? datum['alt-key'] : datum.name;
     let tmpDefault = ('default' in datum) ? datum.default : 0;
     let hasAverage = ('average' in datum && datum.average);
@@ -867,7 +847,7 @@ function addDataTableRow(tableType, rowData = null) { /* OK */
     case 'totals':
       if (rowData == null) {
         rowData = {};
-        tblCfgData.filter(datum => !('table' in datum) || datum.table == tableType).forEach( datum => {
+        appCfg.data.filter(datum => !('table' in datum) || datum.table == tableType).forEach( datum => {
           rowData[datum.name] = ('default' in datum) ? datum.default : 0;
           if ('average' in datum && datum.average) rowData[`average-${datum.name}`] = ('default' in datum) ? datum.default : 0;
         });
@@ -881,35 +861,41 @@ function addDataTableRow(tableType, rowData = null) { /* OK */
       throw new Error(`Unknown tableType "${tableType}"`)
   }
   
-  tblCfgData.forEach( datum => {
+  appCfg.data.forEach( datum => {
     let processDatum = true;
     if ('table' in datum) processDatum = (datum.table == tableType);
     if (processDatum) {
+      let tmpClass = `th-td category-${('category' in datum) ? datum.category.replace(/ /g,'-').toLowerCase() : 'default'}`;
       switch(datum.name) {
         case 'select-service':
-          $(`#${idTbl} tbody tr:last-of-type`).append($('<td>',{'has-waf':rowData.waf}));
+          $(`#${idTbl} tbody tr:last-of-type`).append($('<td>',{'has-waf':rowData.waf, class: tmpClass}));
           $(`#${idTbl} tbody tr:last-of-type td`).append($('<input>',{type:'checkbox',class:datum.name,checked:rowData['selected'],disabled:true}));
           $(`#${idTbl} tbody tr:last-of-type td input`).click(function() { updateSelectedServices(this); });
           break;
         default:
 
-          $(`#${idTbl} tbody tr:last-of-type`).append($('<td>',{class:`${datum.name}${(datum.dataType)?` ${datum.dataType}`:''}`,key:datum.name}));
+          $(`#${idTbl} tbody tr:last-of-type`).append($('<td>',{class:`${tmpClass} ${datum.name}${(datum.dataType)?` ${datum.dataType}`:''}`,key:datum.name}));
           let lastTd = $(`#${idTbl} tbody tr:last-of-type td:last-of-type`);
           
           // tmpName added to support adjusting bandwidth
           let tmpName = `${datum.name}${(tableType == 'data' && 'adjust' in datum && datum.adjust) ? '-adjusted' : ''}`;
+          
+          if (rowData[tmpName] === undefined) {
+            rowData[tmpName] = 0;
+            console.log(`${tableType} / ${tmpName} - ${rowData[tmpName]} (${typeof rowData[tmpName]})`);
+          }
+          
           if (! datum.formats) {
             if (typeof rowData[tmpName] != 'boolean')
               lastTd.text(rowData[tmpName]);
             else 
-              lastTd.text(rowData[tmpName] ? 'X' : '');
+              lastTd.text(rowData[tmpName] ? 'X' : '').addClass(rowData[tmpName] ? 'yes' : 'no');
           } else {
             datum.formats.split(',').forEach(format => {
               lastTd.append($('<span>',{class:format}));
               lastTd.children().last().text(formatBytes(format,rowData[tmpName]));
             });
           }
-          if (datum.csv) lastTd.attr('csv','');
           if (datum.average) {
             lastTd.addClass('non-average').clone().appendTo(lastTd.parent());
             lastTd = lastTd.next();
@@ -932,17 +918,18 @@ function addDataTableRow(tableType, rowData = null) { /* OK */
 }
 
 function addDataSortLinks(tblSelector) { /* OK */
+  let colJquery = $( `${tblSelector} thead th[sort-field]` ).append($('<span>',{class:'text-nowrap'}));
   ['asc','desc'].forEach(sortDirection => {
-    $( `${tblSelector} thead th[sort-field]` ).each(function() {
+    colJquery.find('span').each(function() {
       $( this ).append($('<a>', {class:'sort-link', 'sort-direction': sortDirection}));
     });
-    $( `${tblSelector} thead th[sort-field] a[sort-direction=${sortDirection}]` ).each(function() {
+    colJquery.find(`span a[sort-direction=${sortDirection}]` ).each(function() {
       $( this ).html('&#8679;').prop('title',`Sort column data in ${sortDirection}ending order`);
     });
   });
-  $( `${tblSelector} thead th[sort-field] a.sort-link` ).each(function() {
+  colJquery.find('a.sort-link').each(function() {
     $( this ).click(function(){
-      sortTableData(this.parentElement.getAttribute('sort-field'),this.getAttribute('sort-direction'));
+      sortTableData(this.parentElement.parentElement.getAttribute('sort-field'),this.getAttribute('sort-direction'));
     });
   });
 }
@@ -952,24 +939,23 @@ function createDataTables() { /* OK */
     let idTbl = `service-${tableType}`;
     $(`#${idTbl}`).append('<thead>').append('<tbody>');
     $(`#${idTbl} thead`).addClass('thead-darkish').append('<tr>');
-    tblCfgData.forEach( datum => {
+    appCfg.data.forEach( datum => {
       let processDatum = true;
       if ('table' in datum) processDatum = datum.table == tableType;
       if (processDatum) {
+        let tmpClass = `th-td category-${('category' in datum) ? datum.category.replace(/ /g,'-').toLowerCase() : 'default'}`, attributes = {class:tmpClass};
         switch(datum.name) {
           case 'select-service':
-            $(`#${idTbl} thead tr`).append('<th>');
+            $(`#${idTbl} thead tr`).append($('<th>',attributes));
             $(`#${idTbl} thead tr th:last-of-type`).append($('<input>',{type:'checkbox',value:'',checked:'',class:datum.name}));
             break;
           default:
-            let attributes = {};
             if (!datum.noSort) attributes['sort-field'] = `${datum.name}${(datum.average)?'.non-average':''}`;
-            if (datum.csv) attributes.csv = '';
             $(`#${idTbl} thead tr`).append($('<th>',attributes));
             $(`#${idTbl} thead tr th:last-of-type`).text(datum.title);
             if (datum.average) {
               $(`#${idTbl} thead tr th:last-of-type`).addClass('non-average').clone().appendTo(`#${idTbl} thead tr`);
-              $(`#${idTbl} thead tr th:last-of-type`).text(`Average ${datum.title}`).removeClass('non-average').addClass('average');
+              $(`#${idTbl} thead tr th:last-of-type`).text(`Ave ${datum.title}`).removeClass('non-average').addClass('average');
             }
         }
       }
@@ -1000,10 +986,10 @@ var debug = { /* OK */
   dumpData: function() { console.log(JSON.stringify(serviceData,null,'  ')); },
   load: function(a = null,s) {
     if (a == null) {
-      $('#idType').val('customer').change()
+      $('#customerId').focus();
     } else {
       $('#apiKey').val(a).change();
-      $('#serviceId').val(s).change();
+      $('#serviceId').focus().val(s).change();
     }
     $('#get-data').click();
   },

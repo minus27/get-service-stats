@@ -21,7 +21,7 @@ a.navbar-brand img {
   height: var(--stopwatch-size);
   width: var(--stopwatch-size);
 }
-a.navbar-brand span {
+a.navbar-brand span:not(.dev-mode) {
   display: inline-block;
   padding-left: 1em;
 }
@@ -59,10 +59,14 @@ table {
   border-collapse: separate !important;
   border-spacing: 0 !important;
 }
-.dev-override-background-color {
+
+body:not([dev-mode]) .dev-mode {
+  display: none;
+}
+[dev-mode] .user-inputs .form-group > label {
   background-color: yellow !important;
 }
-.dev-override-color, .dev-override-color span {
+[dev-mode] nav.bg-dark span, [dev-mode] thead.thead-darkish {
   color: yellow !important;
 }
 thead.thead-darkish {
@@ -111,7 +115,7 @@ thead.thead-darkish tr th:last-child{
   border: 0;
 }
 .pseudo-disabled, .pseudo-readonly, .user-inputs .form-group.pseudo-disabled, .user-inputs .form-group.pseudo-readonly {
-  background-color: #e9ecef;
+  background-color: #e9ecef !important;
 }
 
 /*
@@ -160,7 +164,7 @@ input[type=number] {
     -moz-appearance:textfield;
 }
 
-nav img {
+.pointer {
   cursor: pointer;
 }
 
@@ -194,4 +198,22 @@ body[average=false] #service-data tbody td.average
 
 .results h3 {
   text-align: center;
+}
+
+#info-icon {
+  vertical-align: baseline;
+}
+
+.modal-close {
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+tbody th {
+  text-align: center;
+  vertical-align: middle !important;
+}
+
+#modal-settings-cookies input[readonly] {
+  background-color: transparent;
 }
