@@ -1,5 +1,6 @@
 var DEBUG = false;
 var DEBUG_API_CALLS = false;
+var DEBUG_STATE_TRANSITION = false;
 var SAVE_STATS_DATA = false;
 var apiData = {}, statData = {totals:{},stats:{},data:{}}, svcData=[], tmpSvcData=[];
 var apiCallCounter = 0;
@@ -16,14 +17,14 @@ var appCfg = {
       datum.stats.split(',').forEach(stat => { if(!this.stats.includes(stat)) this.stats.push(stat); });
     },this);
     this.data.filter(datum => 'category' in datum).forEach(datum => {
-      let category = `category-${datum.category.replace(/ /g,'-').toLowerCase()}`;
+      let category = `display-category-${datum.category.replace(/ /g,'-').toLowerCase()}`;
       if(!this.categories.includes(category)) this.categories.push(category);
     },this);
   },
   getFieldForName: function(field, nameVal) {
     let a = this.data.filter(datum => 'name' in datum ? (datum.name == nameVal) : false );
     if (a.length == 0) throw new Error(`Name not found (${nameVal})`);
-    if (!(field in a[0])) throw new Error(`Field not found (${field}) for name (${nameVal})`);
+    if (!(field in a[0])) return null; //throw new Error(`Field not found (${field}) for name (${nameVal})`);
     return a[0][field];
   }
 };
@@ -81,7 +82,8 @@ function bootstrapAlert(txtTitle, txtBody, bGoLarge = false) {
   }
   colJquery.find('.modal-title').html(`Error: ${txtTitle}`);
   colJquery.find('.modal-body').html(txtBody);
-  $('#modal-button').click();
+  //$('#modal-button').click();
+  colJquery.modal({backdrop: 'static', keyboard: false});
 }
 
 function translateUrl(url = null) {
@@ -123,12 +125,16 @@ function makeApiXhr(method, url, data, postProcessFunction, extraHeaders) {
 	if (method == "POST") { xhr.send(data); } else { xhr.send(); }
 }
 
-function xhrError(errMsgs,statusCode) {
-  $('[data-dismiss="modal"]').click(function(){
-    stateTransition();
-    $('[data-dismiss="modal"]').off('click');
+function xhrError(statusCode, moreInfo = {}, title = 'Fastly API Call Failed') {
+  let errMsgs = {401:'Bad API Key', 403:'Forbidden', 404:'Not Found', 451:'Unavailable For Legal Reasons'};
+  let addlInfo = {451:'API Key is valid, but not authorized for use with this application', ...moreInfo};
+  $('#modal-generic [data-dismiss="modal"]').click(function(){
+    $('#modal-generic [data-dismiss="modal"]').off('click');
+    stateTransition(-1);
   })
-  bootstrapAlert('XHR Issues',`${(statusCode in errMsgs) ? errMsgs[statusCode] : "Uknown Error"}<br>(HTTP Response Code = ${statusCode})`);
+  let responseText = (statusCode in errMsgs) ? errMsgs[statusCode] : 'Uknown Error';
+  let addlInfoText = (statusCode in addlInfo) ? `<div>(${addlInfo[statusCode]})</div>` : '';
+  bootstrapAlert(title,`<div class="font-weight-bold">HTTP Response Status:  ${statusCode} ${responseText}</div>${addlInfoText}`);
 }
 
 function getServiceInfo(nextState) {
@@ -142,10 +148,10 @@ function getServiceInfo(nextState) {
         service_name:responseData.name
       } );
       apiData.customer_id = responseData.customer_id;
-      $('#customerId').val(apiData.customer_id);
+      $('#customer_id').val(apiData.customer_id);
       stateTransition(nextState);
     } else {
-      xhrError({401:'Bad API Key',404:'Bad Service ID'},xhr.status);
+      xhrError(xhr.status, {404:'Service ID is either invalid or cannot be accessed by API Key'});
       console.log(`getServiceInfo():  HTTP Error (Status = ${xhr.status})`);
     }
 	});
@@ -177,7 +183,7 @@ function getServiceDetails(nextState) {
       
       stateTransition(nextState);
     } else {
-      xhrError({401:'Bad API Key',404:'Bad Service ID'},xhr.status);
+      xhrError(xhr.status, {404:'Service ID is either invalid or cannot be accessed by API Key'});
       console.log(`getServiceDetails():  HTTP Error (Status = ${xhr.status})`);
     }
 	});
@@ -199,7 +205,7 @@ function getCustomerServices(nextState) {
       //console.log(JSON.stringify(svcData,null,"  "));
       stateTransition(nextState);
     } else {
-      xhrError({401:'Bad API Key',404:'Bad Customer ID'},xhr.status);
+      xhrError(xhr.status, {404:'Customer ID is either invalid or cannot be accessed by API Key'});
       console.log(`getCustomerInfo():  HTTP Error (Status = ${xhr.status})`);
     }
 	});
@@ -215,7 +221,7 @@ function getCustomerInfo(nextState) {
       $('#customerName').val(apiData.customer_name);
       stateTransition(nextState);
     } else {
-      xhrError({401:'Bad API Key',404:'Bad Customer ID'},xhr.status);
+      xhrError(xhr.status, {404:'Customer ID is either invalid or cannot be accessed by API Key'});
       console.log(`getCustomerInfo():  HTTP Error (Status = ${xhr.status})`);
     }
 	});
@@ -242,7 +248,7 @@ function getServiceStats(fieldName, nextState) {
       //console.log(`${apiData.service_id} / ${fieldName}: ${total}`)
       stateTransition(nextState);
     } else {
-      xhrError({401:'Bad API Key',404:'Bad Service ID'},xhr.status);
+      xhrError(xhr.status, {404:'Service ID is either invalid or cannot be accessed by API Key'});
       console.log(`getServiceStats():  HTTP Error (Status = ${xhr.status})`);
     }
 	});
@@ -269,7 +275,7 @@ function getAllServiceStats(nextState) {
       });
       stateTransition(nextState);
     } else {
-      xhrError({401:'Bad API Key',404:'Bad Service ID'},xhr.status);
+      xhrError(xhr.status, {404:'Service ID is either invalid or cannot be accessed by API Key'});
       console.log(`getServiceStats():  HTTP Error (Status = ${xhr.status})`);
     }
 	});
@@ -285,7 +291,7 @@ function getUserInfo(nextState) {
       $('#userRole').val(apiData.user_role);
       stateTransition(nextState);
     } else {
-      xhrError({401:'Bad API Key',404:'Bad Service ID'},xhr.status);
+      xhrError(xhr.status, {404:'Service ID is either invalid or cannot be accessed by API Key'});
       console.log(`getUserInfo():  HTTP Error (Status = ${xhr.status})`);
     }
 	});
@@ -321,17 +327,19 @@ function getCsvData() {
     data.services[data.services.length -1].push($(this).text().replace(/⇧/g,''));
   });
   $('#service-data tbody tr').each(function(){
-    data.services.push([]);
-    $(this).find('td:not(:first-of-type)').each(function(){
-      data.services[data.services.length -1].push(($(this).children().length == 0) ? $(this).text() : $(this).find('span.integer').text());
-    });
+    if ($(this).find('td:first-of-type input:checked').length != 0) {
+      data.services.push([]);
+      $(this).find('td:not(:first-of-type)').each(function(){
+        data.services[data.services.length -1].push(($(this).children().length == 0) ? $(this).text() : $(this).find('span.integer').text());
+      });
+    }
   });
   
   data.totals[0].forEach((item, index) => totalFields[item] = data.totals[1][index]);
   data.services.forEach(row => csvData.push(csvify(row)));
   
   let otherFields = [
-    {name:'Customer ID', id:'customerId', placement:'prepend'},
+    {name:'Customer ID', id:'customer_id', placement:'prepend'},
     {name:'Customer Name', id:'customerName', placement:'prepend'},
     {name:'From Date', id:'fromDate', placement:''},
     {name:'To Date', id:'toDate', placement:''},
@@ -400,7 +408,7 @@ function updateSelectedServices(e) {
     default:
       throw new Error(`Unexpected parental tag name (${e.parentElement.tagName})`)
   }
-  updateTables();
+  updateTables(false);
 }
 
 var progressBar = { /* OK */
@@ -480,11 +488,13 @@ function stateTransition(state,nextState) { /* OK */
   } else {
     nextState = (typeof nextState == "undefined") ? (state+1) : nextState;
   }
-  /*
-  console.group(`stateTransition( state = ${state}, nextState = ${nextState} )`);
-  console.log(`${JSON.stringify(apiData,null,"  ")}`);
-  console.groupEnd();
-  */
+  
+  if (DEBUG_STATE_TRANSITION) {
+    console.group(`stateTransition( state = ${state}, nextState = ${nextState} )`);
+    console.log(`${JSON.stringify(apiData,null,"  ")}`);
+    console.groupEnd();
+  }
+  
   switch(state) {
     case -2:
       disableControlsWhileGettingData(false);
@@ -499,10 +509,10 @@ function stateTransition(state,nextState) { /* OK */
       clearData();
       if (DEBUG) console.log(`${state}: Initializing general variables...`);
       disableControlsWhileGettingData(true);
-      apiData.api_key = $('#apiKey').val();
+      apiData.api_key = $('#api_key').val();
       apiData.from_date = $('#fromDate').val();
       apiData.to_date = $('#toDate').val();
-      apiData.shielding_multiplier = parseFloat($('#shieldingMultiplier').val());
+      apiData.shielding_multiplier = parseFloat($('#shielding_multiplier').val());
       svcData=[];
       getUserInfo(nextState);
       return;
@@ -521,11 +531,11 @@ function stateTransition(state,nextState) { /* OK */
             bootstrapAlert('Insuffient Privileges','The supplied API Key has a "billing" User Role which cannot be used with the "Customer ID" Input ID Type');
             return; 
           }
-          apiData.customer_id = $('#customerId').val();
+          apiData.customer_id = $('#customer_id').val();
           getCustomerServices(nextState);
           break;
         case "service":
-          apiData.service_id = $('#serviceId').val();
+          apiData.service_id = $('#service_id').val();
           getServiceInfo(nextState);
           break;
         default:
@@ -539,7 +549,7 @@ function stateTransition(state,nextState) { /* OK */
       $('#serviceName').val(tmpSvcData.service_name);
       if (apiData.id_type == "customer") {
         apiData.service_id = tmpSvcData.service_id;
-        $('#serviceId').val(apiData.service_id);
+        $('#service_id').val(apiData.service_id);
       }
       statData.stats[apiData.service_id] = {};
       statData.totals[apiData.service_id] = {};
@@ -588,17 +598,24 @@ function stateTransition(state,nextState) { /* OK */
         });
       });
       
+      //serviceDataValue['edge-opto'] = (serviceDataValue['io-responses'] + serviceDataValue['video-responses'] + serviceDataValue['otfp-responses']) > 0;
+      
+      // HACK START
+      serviceDataValue['origin-rps'] = serviceDataValue['origin-rps'] / Number($('#elapsedDays').val()) / 86400; // 86400 = 24 * 60 * 60
+      // HACK END
+      
       let rowIndex = serviceData.length;
       serviceData.push({selected: true, row: rowIndex});
       appCfg.data.forEach( datum => {
         if (datum.name in serviceDataValue) serviceData[rowIndex][datum.name] = serviceDataValue[datum.name];
         if ('average' in datum && datum.average) {
-          let averageValue =  Math.round( serviceDataValue[datum.name] / apiData.average_divisor );
-          serviceData[rowIndex][`average-${datum.name}`] = averageValue;
+          serviceData[rowIndex][`average-${datum.name}`] = Math.round( serviceDataValue[datum.name] / apiData.average_divisor );
         }
         if ('adjust' in datum && datum.adjust) {
           serviceData[rowIndex][`${datum.name}-adjusted`] = Math.round( serviceDataValue[datum.name] * apiData.shielding_multiplier );
-          serviceData[rowIndex][`average-${datum.name}-adjusted`] = Math.round( serviceDataValue[datum.name] * apiData.shielding_multiplier / apiData.average_divisor);
+          if ('average' in datum && datum.average) {
+            serviceData[rowIndex][`average-${datum.name}-adjusted`] = Math.round( serviceDataValue[datum.name] * apiData.shielding_multiplier / apiData.average_divisor);
+          }
         }
       });
       
@@ -629,7 +646,7 @@ function stateTransition(state,nextState) { /* OK */
 }
 
 function checkInputs(e) { /* OK */
-  const x = {serviceId:"serviceName",customerId:"customerName",apiKey:"userRole"};
+  const x = {service_id:"serviceName",customer_id:"customerName",api_key:"userRole"};
   if (typeof e !== "undefined") { 
     if (e.id in x) $( `#${x[e.id]}` ).val('');
   }
@@ -713,15 +730,54 @@ function reloadTables() {
   $('#service-data tbody input').removeAttr('disabled');
 }
 
-function updateTables() {
-  //disableControlsWhileGettingData(true);
-  console.log('Table update started')
+var eTimer = {
+  debug: false,
+  startTime: null,
+  stopTime: null,
+  elapsedTime: null,
+  dump: function() { console.log(`startTime: ${this.startTime}, stopTime: ${this.stopTime}, elapsedTime: ${this.elapsedTime}`); },
+  clear: function() {
+    this.startTime = null;
+    this.stopTime = null;
+    this.elapsedTime = null;
+  },
+  now: function() { return (new Date()) / 1; },
+  start: function() {
+    this.clear();
+    this.startTime = this.now();
+    if (this.debug) this.dump();
+  },
+  stop: function() {
+    if (this.startTime == null) throw new Error(`eTimer.stop(): startTime not set`);
+    this.stopTime = this.now();
+    if (this.debug) this.dump();
+  },
+  time: function(stop = false) {
+    if (this.startTime == null) throw new Error(`eTimer.time(): startTime not set`);
+    if (stop) this.stop();
+    this.elapsedTime = ((this.stopTime == null) ? this.now() : this.stopTime) - this.startTime;
+    let tmp = (this.elapsedTime / 1000).toFixed(3).split('.');
+    var date = new Date(0);
+    date.setSeconds(parseInt(tmp[0])); // specify value for SECONDS here
+    var timeString = date.toISOString().substr(11, 8);
+    return(`${timeString}.${tmp[1]}`);
+  }
+}
 
-  let averageDivisor = Number($('#averageDivisor').val());
-  let shieldingMultiplier = Number($('#shieldingMultiplier').val());
+//function realUpdateTables() {
+function updateTables(updateDataTable = true) {
+  //disableControlsWhileGettingData(true);
+  eTimer.start();
+  console.group(`Table update (updateDataTable = ${updateDataTable})`);
+
+  let averageDivisor = Number($('#average_divisor').val());
+  let shieldingMultiplier = Number($('#shielding_multiplier').val());
   // Clear totals
   setTotals();
   let totalsData = getTotals();
+  
+  let keysFormats = {};
+  appCfgData.filter(o => "formats" in o).forEach(o => keysFormats[o.name] = o.formats.split(','));
   // Process data
   serviceData.forEach(datum => {
     // Adjust data
@@ -736,22 +792,33 @@ function updateTables() {
       if (!(nonAverageKey in datum)) throw new Error(`nonAverageKey not found (${nonAverageKey})`);
       datum[key] = Math.round(datum[nonAverageKey] / averageDivisor);
     });
+    
+
     Object.keys(datum).filter(key => !key.endsWith('-adjusted')).forEach(key => {
       let adjustedKey = `${key}-adjusted`;
+      let nonAverageKey = key.replace(/^average-/,'');
       // Display data
       let val = datum[(adjustedKey in datum) ? adjustedKey : key];
-      if (typeof val == 'number') {
-        var c = $(`#service-data tbody tr.row${datum.row} td[key=${key}] span`);
-        if (c.length == 0) {
-          $(`#service-data tbody tr.row${datum.row} td[key=${key}]`).text(val);
-        } else {
-          c.each(function(){
-            let formatType = $(this).attr('class');
-            $(this).text( formatBytes(formatType,val) );
-          });
+      if (updateDataTable) {
+        //console.log('Updating Data Table')
+        if (typeof val == 'number') {
+          var cTd = $(`#service-data tbody tr.row${datum.row} td[key=${key}]`);
+          if (!(nonAverageKey in keysFormats)) {
+            cTd.text(val);
+          } else {
+            cTd.html('');
+            //console.group(`"${key}" -> "${nonAverageKey}"`);
+            keysFormats[nonAverageKey].forEach(formatType => {
+              cTd.append($('<span>',{class:formatType,text:formatBytes(formatType,val)}));
+              //console.log(`"${formatType}" = ${formatBytes(formatType,val)}`)
+            });
+            //console.groupEnd();
+          }
         }
       }
+      
       // Calculate totals
+      
       if (datum.selected) {
         if (key in totalsData) {
           totalsData[key] += val;
@@ -767,6 +834,7 @@ function updateTables() {
             case 'shielding':
             case 'waf':
             case 'edge-compute':
+            case 'edge-opto':
               totalsData[`${key}s`] += (val) ? 1 : 0;
               break;
             default:
@@ -774,15 +842,26 @@ function updateTables() {
           }
         }
       }
-    })
+    });
+    
   });
-  console.log('Table update - setting totals')
+  
+  console.log(`${eTimer.time()} - Setting totals`)
   // Display totals
   setTotals(totalsData);
 
-  console.log('Table update done')  
+  console.log(`${eTimer.time(true)} - Done`)  
   //disableControlsWhileGettingData(false);
+  console.groupEnd();
 }
+
+/*
+function updateTables() {
+  $('#service-data').attr('style','display:none');
+  realUpdateTables();
+  $('#service-data').removeAttr('style');
+}
+*/
 
 
 function updateTotals(rowData = null) { /* OK */
@@ -800,7 +879,8 @@ function updateTotals(rowData = null) { /* OK */
         if (hasAdjust) rowData[`${altKeys[datum.name]}-adjusted`] = tmpDefault;
       }
     } else {
-      altKeys[`average-${datum.name}`] = altKeys[datum.name];
+      /////// altKeys[`average-${datum.name}`] = altKeys[datum.name]; // ?????
+      altKeys[`average-${datum.name}`] = `average-${altKeys[datum.name]}`; // ?????
       totalsData[datum.name] = {selector:`#${idTbl} tbody tr td.${datum.name}.non-average`};
       totalsData[`average-${datum.name}`] = {selector:`#${idTbl} tbody tr td.${datum.name}.average`};
       if (bResetData) {
@@ -822,13 +902,20 @@ function updateTotals(rowData = null) { /* OK */
       }
     }
   });
+  
+  ///console.log(JSON.stringify(totalsData,null,'  '))
+  ///console.log(JSON.stringify(altKeys,null,'  '))
+  
   Object.keys(totalsData).forEach( key => {
     let selector = totalsData[key].selector;
     if ($(selector).length != 1) throw new Error(`bad selector: "${selector}" (${$(selector).length})`);
     let tmpName = (`${altKeys[key]}-adjusted` in rowData) ? `${altKeys[key]}-adjusted` : altKeys[key];
+    
+    ///console.log(`${key} ${tmpName}`)
+    
     let incVal = rowData[tmpName];
     if (typeof d == "boolean") incVal = (incVal) ? 1 : 0;
-    let oldVal = parseInt($(selector).text()), newVal = incVal + ((bResetData) ? 0 : oldVal);
+    let oldVal = Number($(selector).text()), newVal = incVal + ((bResetData) ? 0 : oldVal);
     if (!selector.endsWith('.integer')) {
       $(selector).text(newVal);
     } else {
@@ -861,11 +948,13 @@ function addDataTableRow(tableType, rowData = null) { /* OK */
       throw new Error(`Unknown tableType "${tableType}"`)
   }
   
+  let averageDivisor = Number($('#average_divisor').val());
+  
   appCfg.data.forEach( datum => {
     let processDatum = true;
     if ('table' in datum) processDatum = (datum.table == tableType);
     if (processDatum) {
-      let tmpClass = `th-td category-${('category' in datum) ? datum.category.replace(/ /g,'-').toLowerCase() : 'default'}`;
+      let tmpClass = `th-td display-category-${('category' in datum) ? datum.category.replace(/ /g,'-').toLowerCase() : 'default'}`;
       switch(datum.name) {
         case 'select-service':
           $(`#${idTbl} tbody tr:last-of-type`).append($('<td>',{'has-waf':rowData.waf, class: tmpClass}));
@@ -888,24 +977,39 @@ function addDataTableRow(tableType, rowData = null) { /* OK */
           if (! datum.formats) {
             if (typeof rowData[tmpName] != 'boolean')
               lastTd.text(rowData[tmpName]);
-            else 
-              lastTd.text(rowData[tmpName] ? 'X' : '').addClass(rowData[tmpName] ? 'yes' : 'no');
+            else
+              lastTd.text(rowData[tmpName] ? 'X' : '');
           } else {
             datum.formats.split(',').forEach(format => {
-              lastTd.append($('<span>',{class:format}));
-              lastTd.children().last().text(formatBytes(format,rowData[tmpName]));
+              lastTd.append($('<span>',{class:format, text:formatBytes(format,rowData[tmpName])}));
+              ////lastTd.children().last().text(formatBytes(format,rowData[tmpName]));
             });
           }
+          
+          // Quick Select yes/no classes
+          if (datum.select) {
+            switch(datum.select) {
+              case 'boolean':
+                lastTd.addClass(rowData[tmpName] ? 'yes' : 'no');
+                break;
+              case 'usage':
+                lastTd.addClass((rowData[tmpName] > 0) ? 'yes' : 'no');
+                break;
+              default:
+                throw new Error(`Unknown Quick Select select type (${datum.select})`)
+            }
+          }
+          
           if (datum.average) {
             lastTd.addClass('non-average').clone().appendTo(lastTd.parent());
             lastTd = lastTd.next();
             lastTd.removeClass('non-average').addClass('average').attr('key',`average-${tmpName}`);
-            if (apiData.average_divisor != 1) {
+            if (averageDivisor != 1) {
               if (! datum.formats) {
-                lastTd.text(rowData[`average-${tmpName}`]);
+                lastTd.text( rowData[`average-${tmpName}`] );
               } else {
                 datum.formats.split(',').forEach(format => {
-                  lastTd.find(`.${format}`).text(formatBytes(format,rowData[`average-${tmpName}`]));
+                  lastTd.find(`.${format}`).text(formatBytes(format, rowData[`average-${tmpName}`]));
                 });
               }
             }
@@ -943,7 +1047,7 @@ function createDataTables() { /* OK */
       let processDatum = true;
       if ('table' in datum) processDatum = datum.table == tableType;
       if (processDatum) {
-        let tmpClass = `th-td category-${('category' in datum) ? datum.category.replace(/ /g,'-').toLowerCase() : 'default'}`, attributes = {class:tmpClass};
+        let tmpClass = `th-td display-category-${('category' in datum) ? datum.category.replace(/ /g,'-').toLowerCase() : 'default'}`, attributes = {class:tmpClass};
         switch(datum.name) {
           case 'select-service':
             $(`#${idTbl} thead tr`).append($('<th>',attributes));
@@ -955,7 +1059,7 @@ function createDataTables() { /* OK */
             $(`#${idTbl} thead tr th:last-of-type`).text(datum.title);
             if (datum.average) {
               $(`#${idTbl} thead tr th:last-of-type`).addClass('non-average').clone().appendTo(`#${idTbl} thead tr`);
-              $(`#${idTbl} thead tr th:last-of-type`).text(`Ave ${datum.title}`).removeClass('non-average').addClass('average');
+              $(`#${idTbl} thead tr th:last-of-type`).text(`Avg ${datum.title}`).removeClass('non-average').addClass('average');
             }
         }
       }
@@ -986,10 +1090,10 @@ var debug = { /* OK */
   dumpData: function() { console.log(JSON.stringify(serviceData,null,'  ')); },
   load: function(a = null,s) {
     if (a == null) {
-      $('#customerId').focus();
+      $('#customer_id').focus();
     } else {
-      $('#apiKey').val(a).change();
-      $('#serviceId').focus().val(s).change();
+      $('#api_key').val(a).change();
+      $('#service_id').focus().val(s).change();
     }
     $('#get-data').click();
   },

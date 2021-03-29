@@ -119,6 +119,15 @@ const appCfgData = [
     category: 'Origin'
   },
   {
+    name: "origin-rps",
+    title: "Origin RPS",
+    //formats: "integer,comma-separated",
+    //dataType: "requests",
+    //average: true,
+    stats: 'origin_fetches',
+    category: 'Origin'
+  },
+  {
     name: "backend-bandwidth",
     title: "Backend Request BW",
     formats: "integer,abbreviated,comma-separated",
@@ -154,6 +163,7 @@ const appCfgData = [
     dataType: "requests",
     average: true,
     stats: 'imgopto',
+    select: "usage",
     category: 'Edge Optimization'
   },
   {
@@ -172,6 +182,17 @@ const appCfgData = [
     dataType: "requests",
     average: true,
     stats: 'video',
+    select: "usage",
+    category: 'Edge Optimization'
+  },
+  {
+    name: "otfp-responses",
+    title: "OTFP Responses",
+    formats: "integer,comma-separated",
+    dataType: "requests",
+    average: true,
+    stats: 'otfp',
+    select: "usage",
     category: 'Edge Optimization'
   },
   /**/
@@ -180,6 +201,8 @@ const appCfgData = [
     title: "Shielding",
     table: "data",
     default: false,
+    source: 'TBD - verbiage on "shielding" data source',
+    select: "boolean",
     category: 'Shielding'
   },
   {
@@ -191,23 +214,27 @@ const appCfgData = [
   },
   {
     name: "waf",
-    title: "WAF",
+    title: "Fastly WAF",
     table: "data",
     default: false,
-    category: 'WAF'
+    source: 'TBD - verbiage on "waf" data source',
+    select: "boolean",
+    category: 'Fastly WAF'
   },
   {
     name: "wafs",
-    title: "WAF Count",
+    title: "Fastly WAF Count",
     table: "totals",
     "alt-key": "waf",
-    category: 'WAF'
+    category: 'Fastly WAF'
   },
   {
     name: "edge-compute",
     title: "C@E",
     table: "data",
     default: false,
+    source: 'TBD - verbiage on "edge-compute" data source',
+    select: "boolean",
     category: 'Edge Compute'
   },
   {
@@ -216,5 +243,5 @@ const appCfgData = [
     table: "totals",
     "alt-key": "edge-compute",
     category: 'Edge Compute'
-  }
+  },
 ];

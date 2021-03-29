@@ -5,13 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="icon" href="https://cdn.glitch.com/f88f0196-294f-4200-af1f-06216157baa8%2Fstopwatch_black_60px.png?v=1563811885582">
-    <!--<link rel="icon" href="https://developer.fastly.com/favicon-32x32.png?v=c22d4a3eab3c11d8e032fe7663bfa52d" type="image/png">-->
-
-    <!-- Bootstrap CSS -->
-    <!--
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" />
-    -->
     <link rel="stylesheet" href="/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/css/bootstrap-datepicker.min.css" />
     <link rel="stylesheet" href="/css/my_styles.css" />
@@ -31,7 +24,8 @@
       <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
         <a class="navbar-brand" href="#">
           <img src="/img/speedometer-white-60.svg" alt="">
-          <span>Get Service Stats<span class="dev-mode"> (DEV MODE)</span></span>
+          <img class="dev-mode" src="/img/speedometer-yellow-60.svg" alt="">
+          <span>Get Service Stats - For Internal Fastly Use Only</span>
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar1">
             <span class="navbar-toggler-icon"></span>
@@ -43,9 +37,13 @@
                   Quick Select
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarQuickSelectMenuLink">
-                  <a class="dropdown-item skip" href="#" select-by="waf">...all WAF Services</a>
-                  <a class="dropdown-item skip" href="#" select-by="edge-compute">...all C@E Services</a>
-                  <a class="dropdown-item skip" href="#" select-by="shielding">...all Shielding Services</a>
+                  <h1 class="dropdown-header">Select all</h1>
+                  <a class="dropdown-item skip" href="#" select-by="waf">...VCL Services with a Fastly WAF</a>
+                  <a class="dropdown-item skip" href="#" select-by="shielding">...VCL Services with Shielding</a>
+                  <a class="dropdown-item skip" href="#" select-by="io-responses">...VCL Services with IO Usage</a>
+                  <a class="dropdown-item skip" href="#" select-by="otfp-responses">...VCL Services with OTFP Usage</a>
+                  <a class="dropdown-item skip" href="#" select-by="video-responses">...VCL Services with Video Usage</a>
+                  <a class="dropdown-item skip" href="#" select-by="edge-compute">...WASM (i.e. Edge Compute) Services</a>
                 </div>
               </li>
               <li class="nav-item dropdown  pull-left">
@@ -53,9 +51,11 @@
                   Settings
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarSettingsMenuLink">
-                  <a class="dropdown-item" href="#" id="settings-cookies">Cookies</a>
                   <a class="dropdown-item" href="#" id="settings-displayed-fields">Displayed Data Fields</a>
-                  <a class="dropdown-item" href="#" id="settings-number-formats">Number Formats</a>
+                  <a class="dropdown-item" href="#" id="settings-number-formats">Displayed Number Formats</a>
+                  <div class="dropdown-divider"></div>
+                  <h1 class="dropdown-header">Advanced</h1>
+                  <a class="dropdown-item" href="#" id="settings-cookies">Cookies</a>
                 </div>
               </li>
               <li class="nav-item dropdown  pull-left">
@@ -63,14 +63,27 @@
                   Help
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarHelpMenuLink">
-                  <a class="dropdown-item" href="#" id="help-usage">Basic Usage</a>
-                  <a class="dropdown-item" href="#" id="help-data-fields">Service Data Fields</a>
+                  <h1 class="dropdown-header">FAQ</h1>
+                  <a class="dropdown-item" href="#" id="help-faq-usage">How do I use this application?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-api-key">How do I create an API Key?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-data-fields">Where does the statistical data come from?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-other-fields">Where does the non-statistical data come from?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-displayed-fields">How do I display more / less data?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-export-data">How do I export data?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-cookies">How do I save / delete my settings?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-average-divisor">What is the <strong>Average Divisor</strong> setting?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-adjust-for-shielding">What is the <strong>Adjust for Shielding</strong> setting?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-number-formats">How do I change how numbers are displayed?</a>
+                  <a class="dropdown-item" href="#" id="help-faq-more-help">Where do I go for more help?</a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="#" id="help-disclaimer">Disclaimer</a>
                 </div>
               </li>
           </ul>
         </div>
       </nav>
     </header>
+    
     <section class="user-inputs obscure">
       <input type="hidden" id="idType">
       <div class="container">
@@ -80,7 +93,7 @@
                 <div class="form-group mx-0 row border rounded">
                     <label class="col-sm-4 col-form-label bg-light border-right">API Key</label>
                     <div class="col-sm-8 px-2">
-                      <input type="password" name="password" class="form-control required-input" id="apiKey">
+                      <input type="password" name="password" class="form-control required-input load-from-cookie save-to-cookie" id="api_key">
                     </div>
               </div>  
             </div>
@@ -99,7 +112,7 @@
                 <div class="form-group mx-0 row border rounded">
                     <label class="col-sm-4 col-form-label bg-light border-right">Service ID</label>
                     <div class="col-sm-8 px-2">
-                      <input type="text" class="form-control input-id-type-dependent id-type" id="serviceId" readonly="readonly" prompt="Click to set Service ID">
+                      <input type="text" class="form-control input-id-type-dependent id-type load-from-cookie" id="service_id" readonly="readonly" prompt="Click to set Service ID">
                     </div>
               </div>  
             </div>
@@ -118,7 +131,7 @@
                 <div class="form-group mx-0 row border rounded">
                     <label class="col-sm-4 col-form-label bg-light border-right">Customer ID</label>
                     <div class="col-sm-8 px-2">
-                      <input type="text" class="form-control input-id-type-dependent id-type" id="customerId" readonly="readonly" prompt="Click to set Customer ID">
+                      <input type="text" class="form-control input-id-type-dependent id-type load-from-cookie" id="customer_id" readonly="readonly" prompt="Click to set Customer ID">
                     </div>
               </div>  
             </div>
@@ -162,9 +175,9 @@
             </div>
             <div class="col-6 px-3">
                 <div class="form-group mx-0 row border rounded">
-                    <label class="col-sm-4 col-form-label bg-light border-right" for="averageDivisor">Average Divisor</label>
+                    <label class="col-sm-4 col-form-label bg-light border-right" for="average_divisor">Average Divisor</label>
                     <div class="col-sm-8 px-2">
-                      <input type="number" class="form-control required-input" id="averageDivisor" value="1" min="1" step="1">
+                      <input type="number" class="form-control required-input load-from-cookie save-to-cookie" id="average_divisor" value="1" min="1" step="1">
                     </div>
               </div>
             </div>
@@ -178,8 +191,8 @@
                   <div class="col-sm-8 px-2 pseudo-disabled-hack">
                     <div class="custom-control custom-checkbox">
                       <div class="form-control pseudo-disabled-hack">
-                        <input type="checkbox" class="custom-control-input" id="export-footer" checked>
-                        <label class="custom-control-label" for="export-footer">Append summary information</label>
+                        <input type="checkbox" class="custom-control-input load-from-cookie save-to-cookie" id="export_footer" checked>
+                        <label class="custom-control-label" for="export_footer">Append summary information</label>
                       </div>
                     </div>
                   </div>
@@ -189,7 +202,7 @@
                 <div class="form-group mx-0 row border rounded">
                     <label class="col-sm-4 col-form-label bg-light border-right">Adjust for Shielding</label>
                     <div class="col-sm-8 px-2">
-                      <select class="form-control selectpicker" id="shieldingMultiplier">
+                      <select class="form-control selectpicker load-from-cookie save-to-cookie" id="shielding_multiplier">
                         <option value="1">Count all of Backend BW if Shielding</option>
                         <option value="0.5" selected>Count half of Backend BW if Shielding</option>
                       </select>
@@ -200,6 +213,7 @@
 
       </div>
     </section>
+    
     <section class="obscure">
       <div class="form-group row">
         <div class="col text-center">
@@ -220,16 +234,17 @@
         </div>
       </div>
     </section>
-    <section class="results hidden obscure service-tables" category-default>
+    
+    <section class="results hidden obscure service-tables" display-category-default>
       <h3>Selected Service Totals</h3>
       <div class="card">
         <div class="table-responsive">
           <table class="table table-bordered table-striped table-sm" id="service-totals"></table>
         </div>
       </div>
-    </section>
+    </section> 
     
-    <section class="results hidden obscure service-tables" category-default>
+    <section class="results hidden obscure service-tables" display-category-default>
       <h3>Service Data</h3>
       <div class="card">
         <div class="table-responsive">
@@ -264,43 +279,59 @@
       </div>
     </div>
     <!-- Fastly Only Modal -->
-    <div class="modal fade obscure" id="modal-fastly-only">
+    <div class="modal fade obscure" id="modal-help-disclaimer">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-          <div class="modal-body banner-content">
-            <p>FOR INTERNAL FASTLY USE ONLY</p>
-            <img src="/img/fastly.svg" width="360" height="180">
-            <p>NOT FOR EXTERNAL DISTRIBUTION</p>
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Note: For Internal Fastly Use Only</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-danger bs-alert" data-dismiss="modal">Close</button>
+          <div class="modal-body banner-content">
+            <div class="text-center">
+              <img src="/img/fastly.svg" width="360" height="180">
+            </div>
+            <p>
+              This application is for internal Fastly use only and not intended for external distribution.
+              The data shown is queried on request from Fastly's
+              <a target="_new" href="https://developer.fastly.com/reference/api/metrics-stats/historical-stats/">historical stats</a>
+              API and may differ from the information used for billing.
+            </p>
           </div>
         </div>
       </div>
     </div>
     <!-- Usage Modal -->
-    <div class="modal fade obscure" id="modal-help-usage">
+    <div class="modal fade obscure" id="modal-help-faq-usage">
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
           <div class="modal-header bg-dark text-light">
-            <h4 class="modal-title">Help: Basic Usage</h4>
+            <h4 class="modal-title">Help - FAQ: Basic Usage</h4>
             <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
           <div class="modal-body">
-            <h5>
-              Basic usage:
-            </h5>
+            <p class="text-center">
+              Under Construction
+            </p>
+            <div class="hidden">
+            <p>
+              To use this application, start by getting data for a specific Service or Customer:
+            </p>
             <ol>
-              <li>Enter your Fastly <strong>API Key</strong> - an "admin", "engineer", or "superuser" role is needed</li>
-              <li>Select the <strong>Input ID Type</strong> to either get the bandwidth for a specified Service or all Services for a specified Customer</li>
-              <li>Enter a <strong>Service ID</strong> or <strong>Customer ID</strong> based on selection from the previous step</li>
-              <li>Click <button type="button" class="btn btn-primary">Get Data</button> to, well, get data</li>
+              <li>Enter your Fastly <strong>API Key</strong></li>
+              <li>Enter either a <strong>Service ID</strong> or <strong>Customer ID</strong></li>
+              <li>Change the date range of the data as desired by changing the <strong>From Date</strong> and <strong>To Date</strong></li>
+              <li>Click <strong>Get Data</strong> button to, well, get your data</li>
+            </ol>
+            <p>
+              After your data is retrieved, there are multiple options to adjust the data as displayed what is displayed:
+            </p>
+            <ul>
               <li>Use the selection checkboxes in the first column of the data table to include or exclude a Service's bandwidth in the bandwidth totals</li>
               <li>Click <button type="button" class="btn btn-secondary">Export Selected Data</button> to save data to a CSV file</li>
-            </ol>
-            <h5>
-              Optional adjustments:
-            </h5>
+            </ul>
+            <p>
+              Finally:
+            </p>
             <ul>
               <li>Change the date range of the data by changing the <strong>From Date</strong> and <strong>To Date</strong></li>
               <li>
@@ -319,21 +350,63 @@
                 to sort the data by that columns value in ascending or descending order, respectively
               </li>
             </ul>
+              
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <!-- Data Fields Modal -->
-    <div class="modal fade obscure" id="modal-help-data-fields">
+    <!-- Help FAQ API Key Modal -->
+    <div class="modal fade obscure" id="modal-help-faq-api-key">
       <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
         <div class="modal-content">
           <div class="modal-header bg-dark text-light">
-            <h4 class="modal-title">Help: Service Data Fields</h4>
+            <h4 class="modal-title">Help - FAQ: How do I create an API Key?</h4>
             <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
           <div class="modal-body">
             <p>
-              The Service Data Fields are derived from the Fastly Historical Statistics as follows:
+              Detailed instructions on creating an API Key (a.k.a. API Token) can be found
+              <a target="_new" href="https://docs.fastly.com/en/guides/using-api-tokens#creating-api-tokens">here</a>.
+            </p>
+            <p>
+              Please note:
+            </p>
+            <ul>
+              <li>
+                When creating your API Key, an "admin", "engineer", or "superuser" role is needed to get the information needed
+                to determine the type of service (i.e. VCL or WASM), if Shielding is configured, or if a WAF is deployed.
+              </li>
+              <li>
+                Once you close the <span class="font-weight-bold">New token created</span> window, the token cannot be retrieved.
+                You must copy and save it in a safe and secure place.
+                If you lose it, you should delete it and create a new one.
+                Detailed instructions on deleting an API Key can be found
+                <a target="_new" href="https://docs.fastly.com/en/guides/using-api-tokens#deleting-api-tokens">here</a>.
+              </li>
+              <li>
+                This application locally stores your API Key in a cookie when it is entered or changed.
+                The cookie can be viewed, modified, and deleted using the advanced Cookies option,
+                which can be accessed by selecting <span class="font-weight-bold">Settings &gt; Cookies</span>
+                option from the toolbar at the top of the page.
+                More information on the advanced Cookies option can be found <a href="#" modal-id="help-faq-cookies">here</a>.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ Data Fields Modal -->
+    <div class="modal fade obscure" id="modal-help-faq-data-fields">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: Where does the statistical data come from?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              The values of Service Data fields listed below are derived from the Fastly Historical Statistics as follows:
             </p>
 <!---->
             <div class="row justify-content-center">
@@ -356,18 +429,14 @@
               Note(s):
               <ul style="margin-bottom: 0">
                 <li>
-                  The fields prefixed by "<strong>Ave</strong>" are average fields whose values are calculated
-                  by dividing their corresponding non-average fields by the specified <strong>Average Divisor</strong>.
-                  <ul>
-                    <li>
-                      For example, if the <strong>Average Divisor</strong> is set to <strong>3</strong>,
-                      the <strong>Ave Total Requests</strong> = <strong>Total Requests</strong> / <strong>3</strong>.
-                    </li>
-                  </ul>
+                  The fields prefixed by "<strong>Avg</strong>" are calculated using the specified
+                  <a href="#" modal-id="help-faq-average-divisor">Average Divisor</a>.
                 </li>
                 <li>
-                  The <strong>Backend Request BW</strong> and <strong>Ave Backend Request BW</strong> fields, and only these fields,
-                  can be adjusted using the <strong>Adjust for Shielding</strong> option based on whether or not shielding is in use on a Service.
+                  The <strong>Backend Request BW</strong> and <strong>Avg Backend Request BW</strong> fields,
+                  and only these fields, can be adjusted using the
+                  <a href="#" modal-id="help-faq-adjust-for-shielding">Adjust for Shielding</a>
+                  option if Shielding is in use on a Service.
                 </li>
               </ul>
             </div>
@@ -375,9 +444,263 @@
         </div>
       </div>
     </div>
+    <!-- Help FAQ Other Fields Modal -->
+    <div class="modal fade obscure" id="modal-help-faq-other-fields">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: Where does the statistical data come from?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              The values of Service Data fields listed below are not statistical and are derived as follows:
+            </p>
+<!---->
+            <div class="row justify-content-center">
+              <div class="col-auto">
+<!---->
+                <table class="table table-bordered table-striped table-sm w-auto">
+                  <thead class="thead-darkish dev-override-color">
+                    <tr>
+                      <th>Service Data Field</th>
+                      <th>Data Source</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+<!---->
+              </div>
+            </div>
+<!---->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ Displayed Fields Modal -->
+    <div class="modal fade obscure" id="modal-help-faq-displayed-fields">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: How do I display more / less data?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              The fields shown in the <strong>Service Data</strong> table can be selected / deselected using the
+              <span class="font-weight-bold">Settings &gt; Displayed Data Fields</span>
+              option from the toolbar at the top of the page.
+            </p>
+            <p>
+              All selections are stored in cookies that can be viewed, modified, and changed through the
+              <span class="font-weight-bold">Settings &gt; Cookies</span>
+              advanced option, which also can be accessed from the toolbar at the top of the page.
+              More information on the Cookies advanced option can be found <a href="#" modal-id="help-faq-cookies">here</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ Cookies -->
+    <div class="modal fade obscure" id="modal-help-faq-cookies">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: How do I save / delete my settings?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              Many of the settings are automatically stored in cookies that are automatically created and updated
+              when you enter or change those settings' values.
+              When you re-launch this application, these settings are subsequently restored.
+            </p>
+            <p>
+              The cookies for these settings can be viewed, modified, and changed through the
+              <span class="font-weight-bold">Settings &gt; Cookies</span>
+              advanced option from the toolbar at the top of the page.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ Export Data -->
+    <div class="modal fade obscure" id="modal-help-faq-export-data">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: How do I export data?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              The data in the <span class="font-weight-bold">Service Data</span> table
+              can be saved to a CSV file by clicking the <strong>Export Selected Data</strong> button.
+              Please note:
+            </p>
+            <ul>
+              <li>
+                You will first be presented with a popup window to specify the file name
+                (or cancel the export)
+              </li>
+              <li>
+                Only the selected Services in the <span class="font-weight-bold">Service Data</span> table
+                are exported
+              </li>
+            </ul>
+            <p>
+              In addition, you can optionally choose to include additional summary information
+              at the bottom of the CSV file using the <strong>Export Footer</strong> option.
+              A sample footer is shown below:  
+            </p>
+            <pre class="pre-scrollable"><code></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ Average Divisor -->
+    <div class="modal fade obscure" id="modal-help-faq-average-divisor">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: What is the Average Divisor setting?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              The <strong>Average Divisor</strong> provides a quick and easy way
+              to calculate an average of your bandwidth and count data.
+            </p>
+            <p>
+              For example, if you have 30 days of data
+              in the <span class="font-weight-bold">Service Data</span> table,
+            </p>
+            <ul>
+              <li>
+                ...setting the <strong>Average Divisor</strong> to <strong>4</strong>
+                would result in your <strong>Avg</strong> fields showing a rough weekly average for your data
+              </li>
+              <li>
+                ...setting the <strong>Average Divisor</strong> to <strong>30</strong>
+                would result in your <strong>Avg</strong> fields showing a rough daily average for your data
+              </li>
+            </ul>
+            <p>
+              In addition, if you change your <strong>From Date</strong> and <strong>To Date</strong>
+              fields to span a quarter, e.q. 2020-10-01 to 2020-12-31, and get 3 months of data,
+              setting the <strong>Average Divisor</strong> to <strong>3</strong>
+              would result in your <strong>Avg</strong> fields showing a rough monthly average for your data.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ Adjust for Shielding -->
+    <div class="modal fade obscure" id="modal-help-faq-adjust-for-shielding">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: What is the Adjust for Shielding setting?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <div class="rounded p-3 mb-3 bg-warning text-dark">
+              The use of the <strong>Adjust for Shielding</strong> setting is most likely not needed since the
+              <strong>Origin Request BW</strong> and <strong>Avg Origin Request BW</strong> fields
+              should be preferred over the <strong>Backend Request BW</strong> and <strong>Avg Backend Request BW</strong> fields. 
+            </div>
+            <p>
+              When <a target="_new" href="https://developer.fastly.com/learning/concepts/shielding/">Shielding</a>
+              is configured on a Service, the Client to Origin request flow is as follows:
+            </p>
+            <ol>
+              <li>Client &#8680; Edge POP</li>
+              <li>Edge POP &#8680; Shield POP</li>
+              <li>Shield POP &#8680; Origin</li>
+            </ol>
+            <p>
+              The request bandwidth on both the second and third segments are counted in the backend request
+              (or "bereq") bandwidth totals.
+              As a result, if miss traffic for caching and requests going directly to the Shield POP are ignored,
+              the request bandwidth on the second and third segments will be equal
+              and backend bandwidth total will be twice the origin bandwidth total.
+            </p>
+            <p>
+              Assuming that the backend request bandwidth totals from the second and third segments are roughly equal,
+              the <strong>Adjust for Shielding</strong> setting can be used to optionally half the backend request bandwidth
+              in order to approximate origin bandwidth when Shielding is in use.
+            </p>
+            <p class="mb-0">
+              Note:
+            </p>
+            <ul>
+              <li>
+                The Adjust for Shielding setting only applies to the <strong>Backend Request BW</strong> and <strong>Avg Backend Request BW</strong> fields
+                when Shielding is configured on a Service.
+              </li>
+              <li>
+                The <strong>Origin Request BW</strong> and <strong>Avg Origin Request BW</strong> fields
+                should be preferred over the <strong>Backend Request BW</strong> and <strong>Avg Backend Request BW</strong> fields.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ Number Formats Modal -->
+    <div class="modal fade obscure" id="modal-help-faq-number-formats">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: How do I change how numbers are displayed?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              Multiple formatting options for the counts and bandwidth numerical data are available:
+            </p>
+            <ul>
+              <li>Integer (1234567890)</li>
+              <li>Comma Separated (1,234,567,890)</li>
+              <li>Abbreviated (1.235 TB) - "bandwidth" values only</li>
+            </ul>
+            <p>
+              The formats can be changed using the
+              <span class="font-weight-bold">Settings &gt; Displayed Number Formats</span>
+              option from the toolbar at the top of the page.
+              Changes to the formats are applied immediately to data displayed
+              in the <span class="font-weight-bold">Service Data</span> table.
+            </p>
+            <p>
+              The selected options are stored in cookies that can be viewed, modified, and changed through the
+              <span class="font-weight-bold">Settings &gt; Cookies</span>
+              advanced option, which also can be accessed from the toolbar at the top of the page.
+              More information on the Cookies advanced option can be found <a href="#" modal-id="help-faq-cookies">here</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Help FAQ More Help -->
+    <div class="modal fade obscure" id="modal-help-faq-more-help">
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-light">
+            <h4 class="modal-title">Help - FAQ: Where do I go for more help?</h4>
+            <span class="modal-close" data-dismiss="modal">&#x2715</span>
+          </div>
+          <div class="modal-body">
+            <p>
+              If you have additional questions, as well as suggestions or feedback on this application,
+              please post them in the internal <span class="font-weight-bold">#help-get-stats-app</span> Slack channel.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Display Settings Modal -->
     <div class="modal fade obscure" id="modal-settings-displayed-fields">
-      <div class="modal-dialog modal-dialog-centered"><!--  modal-lg -->
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg ??? -->
         <div class="modal-content">
           <div class="modal-header bg-dark text-light">
             <h4 class="modal-title">Settings: Displayed Data Fields</h4>
@@ -411,7 +734,7 @@
       <div class="modal-dialog modal-dialog-centered"><!--  modal-lg -->
         <div class="modal-content">
           <div class="modal-header bg-dark text-light">
-            <h4 class="modal-title">Settings: Number Formats</h4>
+            <h4 class="modal-title">Settings: Displayed Number Formats</h4>
             <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
           <div class="modal-body">
@@ -438,23 +761,25 @@
     </div>
     <!-- Cookies Modal -->
     <div class="modal fade obscure" id="modal-settings-cookies">
-      <div class="modal-dialog modal-dialog-centered"><!--  modal-lg -->
+      <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
         <div class="modal-content">
           <div class="modal-header bg-dark text-light">
-            <h4 class="modal-title">Settings: Cookies</h4>
+            <h4 class="modal-title">Settings: Cookies (ADVANCED)</h4>
             <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
           <div class="modal-body">
-<!---->
+<!--
             <div class="row justify-content-center">
               <div class="col-auto">
-<!---->
+-->
                 <table class="table table-bordered table-striped table-sm">
                   <thead class="thead-darkish dev-override-color">
                     <tr>
-                      <th><input type="checkbox" class="disable-when-adding-cookie"></th>
+                      <th><input type="checkbox" class="disable-when-adding-cookie select-cookie"></th>
                       <th>Cookie Name</th>
                       <th>Cookie Value</th>
+                      <th><img src="/img/white-eye.svg">
+                      </th>
                     </tr>
                   </thead>
                   <tbody></tbody>
@@ -467,10 +792,10 @@
                   <button type="button" class="btn btn-primary save-new-cookie">Save</button>
                   <button type="button" class="btn btn-primary cancel-new-cookie">Cancel</button>
                 </div>
-<!---->
+<!--
               </div>
             </div>
-<!---->
+-->
           </div>
         </div>
       </div>
