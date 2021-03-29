@@ -60,15 +60,13 @@ table {
   border-spacing: 0 !important;
 }
 
-body:not([dev-mode]) .dev-mode {
+body:not([dev-mode]) .navbar-brand img.dev-mode {
   display: none;
 }
-[dev-mode] .user-inputs .form-group > label {
-  background-color: yellow !important;
+body[dev-mode] .navbar-brand img:not(.dev-mode) {
+  display: none;
 }
-[dev-mode] nav.bg-dark span, [dev-mode] thead.thead-darkish {
-  color: yellow !important;
-}
+
 thead.thead-darkish {
   color: #fff;
   background-color: #343a40;
@@ -168,11 +166,6 @@ input[type=number] {
   cursor: pointer;
 }
 
-.banner-content {
-  text-align: center;
-  font-weight: bold;
-}
-
 .user-inputs .form-group {
   background-color: white;
 }
@@ -217,3 +210,8 @@ tbody th {
 #modal-settings-cookies input[readonly] {
   background-color: transparent;
 }
+
+#modal-settings-cookies input:not([type=checkbox]) {
+  width: 100%;
+}
+    

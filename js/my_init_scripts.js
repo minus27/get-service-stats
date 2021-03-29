@@ -1,3 +1,48 @@
+function loadSampleExportData() {
+  const sampleData = [
+    '"Customer ID:","Jv4-PsmA6LyB2pc7V_a8Hs"',
+    '"Customer Name:","My Customer Account"',
+    '"Services Selected:",1',
+    '"Total Requests:",20518',
+    '"Avg Total Requests:",10259',
+    '"Delivered BW:",81165079',
+    '"Avg Delivered BW:",40582540',
+    '"Hits:",0',
+    '"Avg Hits:",0',
+    '"Misses:",0',
+    '"Avg Misses:",0',
+    '"Passes:",7634',
+    '"Avg Passes:",3817',
+    '"Origin Requests:",7634',
+    '"Avg Origin Requests:",3817',
+    '"Origin Request BW:",6368664',
+    '"Avg Origin Request BW:",3184332',
+    '"Origin Response BW:",38528603',
+    '"Avg Origin Response BW:",19264302',
+    '"Origin RPS:",0.002945216049382716',
+    '"Backend Request BW:",3184332',
+    '"Avg Backend Request BW:",1592166',
+    '"Edge Compute Requests:",0',
+    '"Avg Edge Compute Requests:",0',
+    '"Edge Compute Request Time:",0',
+    '"Avg Edge Compute Request Time:",0',
+    '"IO Responses:",0',
+    '"Avg IO Responses:",0',
+    '"IO Response BW:",0',
+    '"Avg IO Response BW:",0',
+    '"Video Responses:",0',
+    '"Avg Video Responses:",0',
+    '"OTFP Responses:",0',
+    '"Avg OTFP Responses:",0',
+    '"Shielding Count:",0',
+    '"Fastly WAF Count:",1',
+    '"C@E Count:",0',
+    '"Date Range:","2021-03-28 - 2021-02-27"',
+    '"Days of Data:",30',
+  ];
+  $('#modal-help-faq-export-data pre code').text(sampleData.join('\n'));
+}
+
 function quickSelectServices(e) { /* OK */
   if ($('#service-data tbody tr').length == 0) {
     bootstrapAlert('No Data','There is no data to quick select');
@@ -5,14 +50,14 @@ function quickSelectServices(e) { /* OK */
   }
   let selectBy = $(e).attr('select-by');
   //console.log(`Quick Select by ${selectBy}`);
-  if (serviceData.filter(datum => datum[selectBy]).length == 0) {
+  if (serviceData.filter(datum => (typeof datum[selectBy] == "boolean") ? datum[selectBy] : (datum[selectBy] > 0)).length == 0) {
     bootstrapAlert('No Matching Services',`No ${appCfg.getFieldForName('title',selectBy)} services found to quick select`);
     return;
   }
   $( '#service-data tbody input[type=checkbox]' ).prop('checked', false);
   $( `#service-data tbody td.${selectBy}.yes` ).parent().find( 'input[type=checkbox]' ).prop('checked', true);
-  serviceData.forEach(datum => datum.selected = datum[selectBy]);
-  updateTables();
+  serviceData.forEach(datum => datum.selected = (typeof datum[selectBy] == "boolean") ? datum[selectBy] : (datum[selectBy] > 0));
+  updateTables(false);
 }
 
 function exportData() {
@@ -29,14 +74,14 @@ function exportData() {
 }
 
 function updateAverageDivisor() {
-  apiData.average_divisor = parseInt($('#averageDivisor').val());
+  apiData.average_divisor = parseInt($('#average_divisor').val());
   $('body').attr('average',(apiData.average_divisor != '1') ? 'true' : 'false');
-  updateTables();
+  updateTables(true);
 }
 
 function updateShieldingMultiplier() {
-  apiData.shielding_multiplier = parseFloat($('#shieldingMultiplier').val());
-  updateTables();
+  apiData.shielding_multiplier = parseFloat($('#shielding_multiplier').val());
+  updateTables(true);
 }
 
 function checkDates(e) { /* OK */
@@ -50,7 +95,7 @@ function checkDates(e) { /* OK */
 }
 
 function changeInputIdType(e) { /* OK */
-  let selectedValue = $(e).attr('id').replace(/Id$/,'');
+  let selectedValue = $(e).attr('id').replace(/_id$/,'');
   $('#idType').val(selectedValue);
   apiData.id_type = selectedValue;
   if ('user_role' in apiData) {
@@ -61,7 +106,7 @@ function changeInputIdType(e) { /* OK */
     }
   }
   ["service","customer"].forEach(function(idType) {
-    let bMatch = idType==selectedValue, selector = `#${idType}Id`, colJquery = $(selector);
+    let bMatch = idType==selectedValue, selector = `#${idType}_id`, colJquery = $(selector);
     colJquery.prop('readonly',!bMatch);
     let promptMsg = colJquery.attr('prompt'), currentVal = colJquery.val();
     if (bMatch) {
@@ -82,7 +127,7 @@ function changeInputIdType(e) { /* OK */
 }
 
 function initializeAverageDivisor() { /* OK */
-  const selector = '#averageDivisor';
+  const selector = '#average_divisor';
   const oninput_function = function() {
     (validity.valid && value!='') || (value=this.getAttribute('last-value'));
     this.setAttribute('last-value',value);
@@ -92,18 +137,30 @@ function initializeAverageDivisor() { /* OK */
   $(selector).attr('last-value',$(selector).val());
 }
 
-function createStatsTable() {
+function createStatsDataSourceTable() {
   const statUrl = 'https://developer.fastly.com/reference/api/metrics-stats/historical-stats/';
   appCfg.data.filter(datum => 'stats' in datum).forEach(datum => {
-    $('#modal-help-data-fields table tbody')
+    $('#modal-help-faq-data-fields table tbody')
       .append($('<tr>')).find('tr:last-of-type')
-        .append($('<td>',{text:`${('average' in datum && datum.average)?'[Ave] ':''}${datum.title}`}))
-        .append($('<td>',{}));
+        .append($('<td>',{text:`${('average' in datum && datum.average)?'[Avg] ':''}${datum.title}`}))
+        .append($('<td>',{class:`sdf-${datum.name}`}));
     datum.stats.split(',').forEach((stat,index) => {
-      $('#modal-help-data-fields table tbody tr:last-of-type td:last-of-type')
+      $('#modal-help-faq-data-fields table tbody tr:last-of-type td:last-of-type')
         .append(document.createTextNode((index==0)?'':' + '))
         .append($('<a>',{target:'_blank', href:`${statUrl}#field_${stat}`,text:stat}))
     });
+  });
+  // HACK START
+  $('.sdf-origin-rps').append(document.createTextNode(' / Days_of_Data / 24 / 60 / 60'));
+  // HACK END
+}
+
+function createOtherDataSourceTable() {
+  appCfg.data.filter(datum => 'source' in datum).forEach(datum => {
+    $('#modal-help-faq-other-fields table tbody')
+      .append($('<tr>')).find('tr:last-of-type')
+        .append($('<td>',{text:datum.title}))
+        .append($('<td>',{html:datum.source}));
   });
 }
 
@@ -136,13 +193,13 @@ function createDisplaySettingsTable() {
   var categories = {};
   appCfg.data.filter(datum => 'category' in datum).forEach(datum => {
     if (!(datum.category in categories)) categories[datum.category] = [];
-    categories[datum.category].push(`${('average' in datum && datum.average) ? `[Ave] ` : ''}${datum.title}`);
+    categories[datum.category].push(`${('average' in datum && datum.average) ? `[Avg] ` : ''}${datum.title}`);
   });
   Object.keys(categories).forEach(category => {
-    let id = `category-${category.replace(/ /g,'-').toLowerCase()}`;
+    let id = `display-category-${category.replace(/ /g,'-').toLowerCase()}`;
     let lastRow = $('#modal-settings-displayed-fields table tbody').append($('<tr>')).find('tr:last-of-type');
     lastRow.append($('<td>',{class:'align-middle'})).append($('<th>')).append($('<td>'));
-    lastRow.find('td:first-of-type').append($('<input>',{type:'checkbox', value:id, id:id}));
+    lastRow.find('td:first-of-type').append($('<input>',{type:'checkbox', value:id, id:id, class:'load-from-cookie save-to-cookie'}));
     lastRow.find('th').append($('<label>',{text:category, for:id, class:'font-weight-bold mb-0'}));
     categories[category].forEach(field => lastRow.find('td:last-of-type').append($('<div>',{text:field})));
   });
@@ -152,14 +209,21 @@ var MODAL = {
   'modal-settings-cookies': {
     initialized: false,
     id: 'modal-settings-cookies',
+    obfuscated_cookies: ['dev_mode_key','api_key'],
     checkboxClick: function() {
       let MODAL_ID = $(this).parents('.modal').attr('id');
-      if ($(this).parents('th').length != 0) $(`#${MODAL_ID} table tbody input[type=checkbox]`).prop('checked',$(this).prop('checked'));
+      if ($(this).parents('th').length != 0) $(`#${MODAL_ID} table tbody input[type=checkbox].select-cookie`).prop('checked',$(this).prop('checked'));
       $(`#${MODAL_ID} .delete-cookies`).prop('disabled',$(`#${MODAL_ID} input[type=checkbox]:checked`).length == 0);
+    },
+    obfuscateCookie: function() {
+      $(this).parent().prev().find('input').attr('type', $(this).prop('checked') ? 'password' : 'text')
+    },
+    obfuscateCookies: function() {
+      $(`#${this.id} .obfuscate-cookie-by-default`).prop('checked',false).click();
     },
     addTableRow: function(options = {}) {
       let lastRow = $(`#${this.id} table tbody`).append($('<tr>')).find('tr:last-of-type');
-      lastRow.append($('<td>')).find('td:last-of-type').append($('<input>',{type:'checkbox',class:'disable-when-adding-cookie'}));
+      lastRow.append($('<td>')).find('td:last-of-type').append($('<input>',{type:'checkbox',class:'disable-when-adding-cookie select-cookie'}));
       lastRow.append($('<td>')).find('td:last-of-type').append($('<input>',{type:'text',class:'border text-center cookie-name'}));
       if ('name' in options)
         lastRow.find('td:last-of-type input:last-of-type').val(options.name).attr('readonly','').addClass('border-0');
@@ -167,13 +231,17 @@ var MODAL = {
         lastRow.find('td:last-of-type input:last-of-type').keyup(this.checkCookieName);
       lastRow.append($('<td>')).find('td:last-of-type').append($('<input>',{type:'text',class:'border text-center cookie-value'}));
       if ('value' in options) lastRow.find('td:last-of-type input:last-of-type').val(options.value).addClass('readonly-when-adding-cookie').change(this.updateCookie);
+      lastRow.append($('<td>')).find('td:last-of-type').append($('<input>',{type:'checkbox',class:'obfuscate-cookie'})).find('input').click(this.obfuscateCookie);
     },
     updateTableRows: function() {
       $(`#${this.id} table tbody`).html('');
       Object.keys(Cookies.get()).sort().forEach(function(cookieName) {
         this.addTableRow({name:cookieName,value:Cookies.get(cookieName)});
+        //console.log(`${cookieName} - ${this.obfuscated_cookies.includes(cookieName)}`)
+        if (this.obfuscated_cookies.includes(cookieName)) $(`#${this.id} table tbody tr:last-of-type .obfuscate-cookie`).addClass('obfuscate-cookie-by-default');
       },this);
-      $(`#${this.id} input[type=checkbox]`).click(this.checkboxClick);
+      $(`#${this.id} input[type=checkbox].select-cookie`).click(this.checkboxClick);
+      this.obfuscateCookies();
     },
     checkCookieName:function() {
       const classes = 'bg-danger,text-white,border-white';
@@ -186,7 +254,7 @@ var MODAL = {
       $('.save-new-cookie').prop('disabled',badName);
     },
     deleteCookies:function() {
-      let MODAL_ID = $(this).parents('.modal').attr('id'), colJquery = $(`#${MODAL_ID} table tbody input[type=checkbox]:checked`);
+      let MODAL_ID = $(this).parents('.modal').attr('id'), colJquery = $(`#${MODAL_ID} table tbody input[type=checkbox].select-cookie:checked`);
       if (colJquery.length == 0) return;
       colJquery.each(function(){Cookies.remove($(this).parents('tr').find('.cookie-name').val())});
       MODAL[MODAL_ID].updateTableRows();
@@ -223,17 +291,90 @@ var MODAL = {
       $('.show-when-adding-cookie').addClass('hidden');
       $('.readonly-when-adding-cookie').removeAttr('readonly');
     },
+    saveToCookie: function() {
+      let c = $(this);
+      if (c.length == 1) {
+        let tagName = c.prop('tagName').toUpperCase(), cookieName = c.attr('id');
+        switch (tagName) {
+          case 'INPUT':
+            let inputType = c.attr('type').toUpperCase();
+            switch (inputType) {
+              case 'CHECKBOX':
+                Cookies.set(cookieName, c.prop('checked') ? 'checked' : 'unchecked', {expires: 365});
+                break;
+              case 'TEXT':
+              case 'PASSWORD':
+                Cookies.set(cookieName, c.val(), {expires: 365});
+                break;
+              case 'NUMBER':
+                Cookies.set(cookieName, c.val(), {expires: 365});
+                break;
+              case 'RADIO':
+                Cookies.set(cookieName.replace(/-[^-]+$/,''), c.val(), {expires: 365});
+                break;
+              default:
+                throw new Error(`Unknown INPUT TYPE (${inputType})`);
+            }
+            break;
+          case 'SELECT':
+            Cookies.set(cookieName, c.val(), {expires: 365});
+            break;
+          default:
+            throw new Error(`Unknown TAG NAME (${tagName})`);
+        }
+      }
+      MODAL['modal-settings-cookies'].updateTableRows();
+    },
+    loadCookies: function() {
+      Object.keys(Cookies.get()).sort().forEach(function(cookieName) {
+        let c = $(`#${cookieName}.load-from-cookie`);
+        if (c.length == 1) {
+          let tagName = c.prop('tagName').toUpperCase();
+          switch (tagName) {
+            case 'INPUT':
+              let inputType = c.attr('type').toUpperCase();
+              switch (inputType) {
+                case 'CHECKBOX':
+                  let bChecked = Cookies.get(cookieName).toLowerCase() == 'checked';
+                  c.prop('checked',!bChecked).click();
+                  break;
+                case 'TEXT':
+                case 'PASSWORD':
+                  c.val(Cookies.get(cookieName)).change();
+                  break;
+                case 'HIDDEN':
+                  c.val(Cookies.get(cookieName));
+                  $(`input[name="${cookieName}"][value="${Cookies.get(cookieName)}"]`).click();
+                  break;
+                case 'NUMBER':
+                  if (/^[1-9][0-9]*$/) c.val(Cookies.get(cookieName)).change();
+                  break;
+                default:
+                  throw new Error(`Unknown INPUT TYPE (${inputType})`);
+              }
+              break;
+            case 'SELECT':
+              let selectedIndex = c.prop('selectedIndex');
+              if (c.val(Cookies.get(cookieName)).prop('selectedIndex') == -1) c.prop('selectedIndex',selectedIndex);
+              break;
+            default:
+              throw new Error(`Unknown TAG NAME (${tagName})`);
+          }
+        }
+      });
+    },
     init: function() {
       if (this.initialized) {
         bootstrapAlert('Unexpected Internal Issue','Sorry, modalCookieWindow cannot be re-initialized');
         return;
       }
       this.updateTableRows();
+      $(`#${this.id}`).blur(this.obfuscateCookies);
       $(`#${this.id} button.delete-cookies`).click(this.deleteCookies);
       $(`#${this.id} button.add-cookie`).click(this.addCookie);
       $(`#${this.id} button.save-new-cookie`).click(this.eatNewCookie);
       $(`#${this.id} button.cancel-new-cookie`).click(this.eatNewCookie);
-      $(`#${this.id} th input[type=checkbox]`).click(this.checkboxClick).click().click();
+      $(`#${this.id} th input[type=checkbox].select-cookie`).click(this.checkboxClick).click().click();
       this.initialized = true;
     }
   },
@@ -253,7 +394,7 @@ function createNumberFormatTable() {
       formats: "integer,comma-separated,abbreviated",
     },
     requests: {
-      label: "Requests",
+      label: "Count",
       id: "requests-format",
       formats: "integer,comma-separated",
     },
@@ -267,11 +408,11 @@ function createNumberFormatTable() {
     $('#modal-settings-number-formats tbody')
     let lastRow = $('#modal-settings-number-formats table tbody').append($('<tr>')).find('tr:last-of-type');
     let lastCell = lastRow.append($('<th>',{text:formatCfg[key].label})).append($('<td>',{class:'text-left'})).find('td');
-    lastCell.append($('<input>',{type:'hidden',id:formatCfg[key].id}));
+    lastCell.append($('<input>',{type:'hidden',id:formatCfg[key].id,class:'load-from-cookie'}));
     formatCfg[key].formats.split(',').forEach((format,index) => {
       lastCell.append($('<div>',{class:'form-check'})).find('div:last-of-type')
-        .append($('<input>',{type:'radio', class:'form-check-input', name:formatCfg[key].id, id:`${formatCfg[key].id}-${index}`, value:format}))
-        .append($('<label>',{class:'form-check-label', for:`${formatCfg[key].id}-${index}`, text:(format in labelText) ? labelText[format] : format}))
+        .append($('<input>',{type:'radio', class:'form-check-input', name:formatCfg[key].id, id:`${formatCfg[key].id}-${index}`, value:format, class:'save-to-cookie'}))
+        .append($('<label>',{class:'form-check-label pl-2', for:`${formatCfg[key].id}-${index}`, text:(format in labelText) ? labelText[format] : format}))
     });
     lastRow.find('input:last-of-type').click();
   });
@@ -281,7 +422,7 @@ function addCatgoryStyles() {
   let styles = [];
   styles.push('');
   styles.push('.service-tables .th-td { display: none; }');
-  styles.push(`.service-tables[category-default] .th-td.category-default { display: table-cell; }`)
+  styles.push(`.service-tables[display-category-default] .th-td.display-category-default { display: table-cell; }`)
   appCfg.categories.forEach(category => styles.push(`.service-tables[${category}] .th-td.${category} { display: table-cell; }`));
   styles.push('');
   $('head').append($('<style>',{type:'text/css'})).find('style:last-of-type').append( document.createTextNode(styles.join('\n')) );
@@ -310,6 +451,13 @@ var devMode = {
   }
 }
 
+function switchModal(id) {
+  $('.modal-close').click();
+  setTimeout(function(){
+    $(`#${id}`).click();
+  },1000,this);
+}
+
 function initialize() {
   
   // Initial initialization...
@@ -320,14 +468,17 @@ function initialize() {
   // Finish page...
   
   createDataTables();
-  createStatsTable();
+  createStatsDataSourceTable();
+  createOtherDataSourceTable();
   createDisplaySettingsTable();
   createNumberFormatTable();
   MODAL['modal-settings-cookies'].init();
+  $('a[modal-id]').click( function() { switchModal($(this).attr('modal-id')); } );
   
   // Set Dev Override if necessary
   
-  if (location.hostname == 'get-service-stats.global.ssl.fastly.net') {
+  if (/^get-((customer|service)-)?stats\.global\.ssl\.fastly\.net$/.test(location.hostname)) {
+    console.log('OK')
     $( '.obscure' ).removeClass('obscure');
     $( '.not-obscured' ).addClass('obscure');
     $( '#banner-content-obscure' ).attr('id','banner-content');
@@ -346,10 +497,10 @@ function initialize() {
     .datepicker( "setDate", daysFromNow(-1)).attr("previous-value",$( "#toDate" ).val());
   $( '.date-picker' ).change(function() { checkDates(this); });
   $( '#elapsedDays' ).val(elapsedDays());
-  $( '#averageDivisor' ).change(function(){ updateAverageDivisor(); }).change();
+  $( '#average_divisor' ).change(function(){ updateAverageDivisor(); }).change();
   initializeAverageDivisor();
-  $( '#shieldingMultiplier' ).change(function() { updateShieldingMultiplier(); });
-  $( '#export-footer' ).change(function(){apiData.export_footer=$(this).prop('checked');}).change();
+  $( '#shielding_multiplier' ).change(function() { updateShieldingMultiplier(); });
+  $( '#export_footer' ).change(function(){apiData.export_footer=$(this).prop('checked');}).change();
   $( '.required-input' ).change(function() { checkInputs(this); }).keyup(function() { checkInputs(this); });
   $( '.select-service' ).click(function() { updateSelectedServices(this); });
   
@@ -363,23 +514,19 @@ function initialize() {
   
   // Menu and Modals...
   
-  $( '.nav-item.dropdown a.dropdown-item:not(.skip)' ).click(function() { $(`#modal-${this.id}`).modal('show'); });
-  /*
-  $( '#help-usage' ).click(function() { $('#modal-usage').modal('show'); });
-  $( '#help-data-fields' ).click(function() { $('#modal-data-fields').modal('show'); });
-  $( '#settings-cookies' ).click(function() { $('#modal-cookies').modal('show'); });
-  $( '#settings-displayed-fields' ).click(function() { $('#modal-display-settings').modal('show'); });
-  $( '#settings-number-formats' ).click(function() { $('#modal-settings-number-formats').modal('show'); });
-  */
+  $( '.nav-item.dropdown a.dropdown-item:not(.skip)' ).click(function() { $(`#modal-${this.id}`).blur().modal('show'); });
   $( '#modal-settings-displayed-fields input[type=checkbox]' ).click(function() { selectCategories(this); });
   $( 'a[select-by]' ).click(function() { quickSelectServices(this); });
   $( '#modal-settings-number-formats input[type=radio]' ).click( function() { changeDataFormat(this); });
-  $( '#modal-settings-number-formats td div:last-of-type input[type=radio]' ).click()
+  $( '#modal-settings-number-formats td div:last-of-type input[type=radio]' ).click();
+  loadSampleExportData();
   
   // Final initialization...
   
   clearData();
-  $('#serviceId').focus();
+  $('#service_id').focus();
   $( '.results.hidden' ).removeClass( 'hidden' );
-  if (!devMode.status) $('#modal-fastly-only').modal('show');
+  if (!devMode.status) $('#modal-help-disclaimer').modal('show');
+  MODAL['modal-settings-cookies'].loadCookies();
+  $('.save-to-cookie').change( MODAL['modal-settings-cookies'].saveToCookie );
 }
