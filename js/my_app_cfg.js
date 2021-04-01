@@ -156,8 +156,8 @@ const appCfgData = [
   {
     name: "compute-time",
     title: "Edge Compute Request Time",
-    formats: "integer,comma-separated",
-    dataType: "requests",
+    //formats: "integer,comma-separated",
+    //dataType: "requests",
     average: true,
     stats: 'compute_request_time_ms',
     category: 'Edge Compute'

@@ -9,7 +9,7 @@ var apiCallCounter = 0;
 var serviceData = [];
 var totalsData = {};
 
-function fixIt(k,n) { return (k != 'origin-rps') ? n : (n.toFixed(FIX_IT_DIGITS)); }
+function fixIt(k,n) { return (!['compute-time','origin-rps'].includes(k)) ? n : (n.toFixed(FIX_IT_DIGITS)); }
 
 var appCfg = {
   data: [],
