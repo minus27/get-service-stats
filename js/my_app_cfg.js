@@ -35,6 +35,12 @@ const appCfgData = [
     default: ""
   },
   {
+    name: "service-type",
+    title: "Type",
+    table: "data",
+    default: ""
+  },
+  {
     name: "total-requests",
     title: "Total Requests",
     formats: "integer,comma-separated",
@@ -52,6 +58,7 @@ const appCfgData = [
     stats: 'bandwidth',
     category: 'Delivery'
   },
+ /* 
   {
     name: "hits",
     title: "Hits",
@@ -79,7 +86,6 @@ const appCfgData = [
     stats: 'pass',
     category: 'Hit-Miss-Pass'
   },
-  /*
   {
     name: "hit-ratio",
     title: "Cache Hit Ratio",
@@ -89,7 +95,7 @@ const appCfgData = [
     stats: 'hit_ratio',
     category: 'Delivery'
   },
-  */
+*/
   {
     name: "origin-fetches",
     title: "Origin Requests",
@@ -201,7 +207,7 @@ const appCfgData = [
     title: "Shielding",
     table: "data",
     default: false,
-    source: 'TBD - verbiage on "shielding" data source',
+    source: 'If a shield is specified for any of the backends in the Service\'s active configuration',
     select: "boolean",
     category: 'Shielding'
   },
@@ -217,7 +223,7 @@ const appCfgData = [
     title: "Fastly WAF",
     table: "data",
     default: false,
-    source: 'TBD - verbiage on "waf" data source',
+    source: 'If a Fastly WAF object is defined in the Service\'s active configuration',
     select: "boolean",
     category: 'Fastly WAF'
   },
@@ -233,7 +239,7 @@ const appCfgData = [
     title: "C@E",
     table: "data",
     default: false,
-    source: 'TBD - verbiage on "edge-compute" data source',
+    source: 'If there is a WASM package in the Service\'s active configuration',
     select: "boolean",
     category: 'Edge Compute'
   },

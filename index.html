@@ -293,7 +293,7 @@
             <p>
               This application is for internal Fastly use only and not intended for external distribution.
               The data shown is queried on request from Fastly's
-              <a target="_new" href="https://developer.fastly.com/reference/api/metrics-stats/historical-stats/">historical stats</a>
+              <a target="_blank" href="https://developer.fastly.com/reference/api/metrics-stats/historical-stats/">historical stats</a>
               API and may differ from the information used for billing.
             </p>
           </div>
@@ -309,49 +309,56 @@
             <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
           <div class="modal-body">
-            <p class="text-center">
-              Under Construction
-            </p>
-            <div class="hidden">
             <p>
-              To use this application, start by getting data for a specific Service or Customer:
+              To use this application, do the following:
             </p>
             <ol>
-              <li>Enter your Fastly <strong>API Key</strong></li>
-              <li>Enter either a <strong>Service ID</strong> or <strong>Customer ID</strong></li>
-              <li>Change the date range of the data as desired by changing the <strong>From Date</strong> and <strong>To Date</strong></li>
-              <li>Click <strong>Get Data</strong> button to, well, get your data</li>
+              <li>
+                Specify what you want
+                <ul>
+                  <li>Enter either a <strong>Service ID</strong> or <strong>Customer ID</strong></li>
+                  <li>
+                    If you want something other than the default 30 days of data,
+                    change the date range of the data as desired by changing the <strong>From Date</strong> and <strong>To Date</strong>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Get your data
+                <ul>
+                  <li>If you have not already, enter your Fastly <a href="#" modal-id="help-faq-api-key">API Key</a></li>
+                  <li>Click the <strong>Get Data</strong> button to get your desired data</li>
+                </ul>
+              </li>
+              <li>
+                Adjust your data and its display
+                <ul>
+                  <li>Select the <a href="#" modal-id="help-faq-displayed-fields">data fields you want displayed</a> in the Service Data table</li>
+                  <li>Change the format of the numerical data</li>
+                  <li>
+                    Adjust your data using the <a href="#" modal-id="help-faq-average-divisor">Average Divisor</a>
+                    or <a href="#" modal-id="help-faq-adjust-for-shielding">Adjust for Shielding</a> options
+                  </li>
+                  <li>Sort the data fields in the Service Data table in ascending/descending order by clicking the up/down arrows</li>
+                </ul>
+              </li>
+              <li>
+                Select your Services
+                <ul>
+                  <li>Select/deselect individual Services in the Service Data table</li>
+                  <li>Use the Quick Select options from the tool bar at the top of the page</li>
+                </ul>
+              </li>
+              <li>
+                Export your data
+                <ul>
+                  <li>
+                    Click the <strong>Export Data</strong> button to
+                    <a href="#" modal-id="help-faq-export-data">export the data from your selected Services to a CSV file</a>
+                  </li>
+                </ul>
+              </li>
             </ol>
-            <p>
-              After your data is retrieved, there are multiple options to adjust the data as displayed what is displayed:
-            </p>
-            <ul>
-              <li>Use the selection checkboxes in the first column of the data table to include or exclude a Service's bandwidth in the bandwidth totals</li>
-              <li>Click <button type="button" class="btn btn-secondary">Export Selected Data</button> to save data to a CSV file</li>
-            </ul>
-            <p>
-              Finally:
-            </p>
-            <ul>
-              <li>Change the date range of the data by changing the <strong>From Date</strong> and <strong>To Date</strong></li>
-              <li>
-                Average your bandwidth by setting the <strong>Average Divisor</strong>, e.g. set the date range to 2 months
-                and then set the <strong>Average Divisor</strong> to "2" to get a rough monthly average
-              </li>
-              <li>Change the <strong>Adjust for Shielding</strong> setting so that origin bandwidth is not "double counted" when Shielding is configured on a Service</li>
-              <li>Change the <strong>Append summary information</strong> setting to include or exclude the tool settings at the bottom of your CSV export file</li>
-              <li>Click <button type="button" class="btn btn-secondary">Select WAF Services</button> to only select the WAF enabled Services</li>
-            </ul>
-            <h5>Display settings:</h5>
-            <ul>
-              <li>Change the <strong>Bandwidth Format</strong> setting to control how the bandwidth value is displayed</li>
-              <li>
-                Click the up or down arrows (⇧<span class="flip">⇧</span>) in the data table header row 
-                to sort the data by that columns value in ascending or descending order, respectively
-              </li>
-            </ul>
-              
-            </div>
           </div>
         </div>
       </div>
@@ -367,7 +374,7 @@
           <div class="modal-body">
             <p>
               Detailed instructions on creating an API Key (a.k.a. API Token) can be found
-              <a target="_new" href="https://docs.fastly.com/en/guides/using-api-tokens#creating-api-tokens">here</a>.
+              <a target="_blank" href="https://docs.fastly.com/en/guides/using-api-tokens#creating-api-tokens">here</a>.
             </p>
             <p>
               Please note:
@@ -382,12 +389,12 @@
                 You must copy and save it in a safe and secure place.
                 If you lose it, you should delete it and create a new one.
                 Detailed instructions on deleting an API Key can be found
-                <a target="_new" href="https://docs.fastly.com/en/guides/using-api-tokens#deleting-api-tokens">here</a>.
+                <a target="_blank" href="https://docs.fastly.com/en/guides/using-api-tokens#deleting-api-tokens">here</a>.
               </li>
               <li>
                 This application locally stores your API Key in a cookie when it is entered or changed.
                 The cookie can be viewed, modified, and deleted using the advanced Cookies option,
-                which can be accessed by selecting <span class="font-weight-bold">Settings &gt; Cookies</span>
+                which can be accessed by selecting <a href="#" modal-id="settings-cookies">Settings &gt; Cookies</a>
                 option from the toolbar at the top of the page.
                 More information on the advanced Cookies option can be found <a href="#" modal-id="help-faq-cookies">here</a>.
               </li>
@@ -449,12 +456,14 @@
       <div class="modal-dialog modal-dialog-centered modal-lg"><!--  modal-lg -->
         <div class="modal-content">
           <div class="modal-header bg-dark text-light">
-            <h4 class="modal-title">Help - FAQ: Where does the statistical data come from?</h4>
+            <h4 class="modal-title">Help - FAQ: Where does the non-statistical data come from?</h4>
             <span class="modal-close" data-dismiss="modal">&#x2715</span>
           </div>
           <div class="modal-body">
             <p>
-              The values of Service Data fields listed below are not statistical and are derived as follows:
+              The values of Service Data fields listed below are not statistical and are derived from the active version information returned by the
+              <a target="_blank" href="https://developer.fastly.com/reference/api/services/service/#get-service-detail">Get service details</a>
+              Fastly API call.
             </p>
 <!---->
             <div class="row justify-content-center">
@@ -464,7 +473,7 @@
                   <thead class="thead-darkish dev-override-color">
                     <tr>
                       <th>Service Data Field</th>
-                      <th>Data Source</th>
+                      <th>Data Condition for an "X"</th>
                     </tr>
                   </thead>
                   <tbody></tbody>
@@ -473,6 +482,18 @@
               </div>
             </div>
 <!---->
+            <p class="mb-0">
+              Note:
+            </p>
+            <ul>
+              <li>
+                The logic above is unique to this application and may not be consistent with the logic used by other Fastly billing and reporting systems.
+              </li>
+              <li>
+                The <a target="_blank" href="https://developer.fastly.com/reference/api/services/service/#get-service-detail">Get service details</a>
+                Fastly API call requires an API token with at least Engineer permissions.
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -488,12 +509,12 @@
           <div class="modal-body">
             <p>
               The fields shown in the <strong>Service Data</strong> table can be selected / deselected using the
-              <span class="font-weight-bold">Settings &gt; Displayed Data Fields</span>
+              <a href="#" modal-id="settings-displayed-fields">Settings &gt; Displayed Data Fields</a>
               option from the toolbar at the top of the page.
             </p>
             <p>
               All selections are stored in cookies that can be viewed, modified, and changed through the
-              <span class="font-weight-bold">Settings &gt; Cookies</span>
+              <a href="#" modal-id="settings-cookies">Settings &gt; Cookies</a>
               advanced option, which also can be accessed from the toolbar at the top of the page.
               More information on the Cookies advanced option can be found <a href="#" modal-id="help-faq-cookies">here</a>.
             </p>
@@ -517,7 +538,7 @@
             </p>
             <p>
               The cookies for these settings can be viewed, modified, and changed through the
-              <span class="font-weight-bold">Settings &gt; Cookies</span>
+              <a href="#" modal-id="settings-cookies">Settings &gt; Cookies</a>
               advanced option from the toolbar at the top of the page.
             </p>
           </div>
@@ -553,7 +574,7 @@
               at the bottom of the CSV file using the <strong>Export Footer</strong> option.
               A sample footer is shown below:  
             </p>
-            <pre class="pre-scrollable"><code></code></pre>
+            <pre class="pre-scrollable bg-light"><code></code></pre>
           </div>
         </div>
       </div>
@@ -610,7 +631,7 @@
               should be preferred over the <strong>Backend Request BW</strong> and <strong>Avg Backend Request BW</strong> fields. 
             </div>
             <p>
-              When <a target="_new" href="https://developer.fastly.com/learning/concepts/shielding/">Shielding</a>
+              When <a target="_blank" href="https://developer.fastly.com/learning/concepts/shielding/">Shielding</a>
               is configured on a Service, the Client to Origin request flow is as follows:
             </p>
             <ol>
@@ -666,14 +687,14 @@
             </ul>
             <p>
               The formats can be changed using the
-              <span class="font-weight-bold">Settings &gt; Displayed Number Formats</span>
+              <a href="#" modal-id="settings-number-formats">Settings &gt; Displayed Number Formats</a>
               option from the toolbar at the top of the page.
               Changes to the formats are applied immediately to data displayed
-              in the <span class="font-weight-bold">Service Data</span> table.
+              in the <strong>Service Data</strong> table.
             </p>
             <p>
               The selected options are stored in cookies that can be viewed, modified, and changed through the
-              <span class="font-weight-bold">Settings &gt; Cookies</span>
+              <a href="#" modal-id="settings-cookies">Settings &gt; Cookies</a>
               advanced option, which also can be accessed from the toolbar at the top of the page.
               More information on the Cookies advanced option can be found <a href="#" modal-id="help-faq-cookies">here</a>.
             </p>
@@ -692,7 +713,7 @@
           <div class="modal-body">
             <p>
               If you have additional questions, as well as suggestions or feedback on this application,
-              please post them in the internal <span class="font-weight-bold">#help-get-stats-app</span> Slack channel.
+              please post them in the internal <strong>#help-get-stats-app</strong> Slack channel.
             </p>
           </div>
         </div>

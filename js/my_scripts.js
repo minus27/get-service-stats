@@ -1,10 +1,15 @@
 var DEBUG = false;
 var DEBUG_API_CALLS = false;
 var DEBUG_STATE_TRANSITION = false;
+var DEBUG_UPDATE_TIME = false;
 var SAVE_STATS_DATA = false;
+var FIX_IT_DIGITS = 3;
 var apiData = {}, statData = {totals:{},stats:{},data:{}}, svcData=[], tmpSvcData=[];
 var apiCallCounter = 0;
 var serviceData = [];
+var totalsData = {};
+
+function fixIt(k,n) { return (k != 'origin-rps') ? n : (n.toFixed(FIX_IT_DIGITS)); }
 
 var appCfg = {
   data: [],
@@ -381,7 +386,10 @@ function clearData(keepData = false) {
   $('#output').html('');
   updateTotals();
   $('.input-id-type-dependent[readonly]').val('');
-  if (!keepData) serviceData = [];
+  if (!keepData) {
+    serviceData = [];
+    Object.keys(totalsData).forEach( key => totalsData[key] = 0);
+  }
 }
 
 function formatBytes(formatType,bytes) {
@@ -585,6 +593,7 @@ function stateTransition(state,nextState) { /* OK */
       let serviceDataValue = {
         "service-id": apiData.service_id,
         "service-name": oTotals.service_name,
+        "service-type": (tmpSvcData.edgeComputeCount == 0) ? "VCL" : "WASM",
         "shielding": (tmpSvcData.backendShieldCount > 0),
         "waf": (tmpSvcData.wafCount > 0),
         "edge-compute": (tmpSvcData.edgeComputeCount > 0),
@@ -690,7 +699,17 @@ function sortTableData(field,order) { /* OK */
     let className = $(this).attr('class'),
         selector2 = `#service-data tbody tr.${className} td.${field}`,
         selector1 = `${selector2} span.integer`,
-        data = ($(selector1).length == 1) ? $(selector1).text() : $(selector2).text();
+        data;
+        //data = ($(selector1).length == 1) ? $(selector1).text() : $(selector2).text();
+    if ($(selector1).length == 1) {
+      data = $(selector1).text();
+    } else {  
+      if (field != 'service-select') {
+        data = $(selector2).text();
+      } else {
+        data = $(`${selector2} input`).prop('checked') ? "0" : "1"; // TRUE = 0 so that ascending sort works
+      }
+    }
     tblData.push( {
       class: className,
       data: (isNaN(Number(data)) || data == '') ? data : Number(data),
@@ -713,7 +732,7 @@ function setTotals(totalData = {}) {
   $('#service-totals tbody tr td[key]').each(function(){
     let key = $(this).attr('key'), val = (key in totalData) ? totalData[key] : 0, c = $(`#service-totals tbody tr td[key=${key}] span`);
     if (c.length == 0) {
-      $(this).text(val);
+      $(this).text( fixIt(key, val) );
     } else {
       c.each(function(){
         let formatType = $(this).attr('class');
@@ -725,6 +744,7 @@ function setTotals(totalData = {}) {
 
 function reloadTables() {
   setTotals();
+  Object.keys(totalsData).forEach( key => totalsData[key] = 0);
   $(`#service-data tbody`).html('');
   serviceData.forEach(datum => addDataTableRow('data',datum));
   $('#service-data tbody input').removeAttr('disabled');
@@ -764,17 +784,23 @@ var eTimer = {
   }
 }
 
+function dumpJson(o,g = '') {
+  if (g) console.group(g);
+  console.log(JSON.stringify(o,null,'  '));
+  if (g) console.groupEnd();
+}
+
 //function realUpdateTables() {
 function updateTables(updateDataTable = true) {
   //disableControlsWhileGettingData(true);
   eTimer.start();
-  console.group(`Table update (updateDataTable = ${updateDataTable})`);
+  if (DEBUG_UPDATE_TIME) console.group(`Table update (updateDataTable = ${updateDataTable})`);
 
   let averageDivisor = Number($('#average_divisor').val());
   let shieldingMultiplier = Number($('#shielding_multiplier').val());
   // Clear totals
   setTotals();
-  let totalsData = getTotals();
+  totalsData = getTotals();
   
   let keysFormats = {};
   appCfgData.filter(o => "formats" in o).forEach(o => keysFormats[o.name] = o.formats.split(','));
@@ -804,7 +830,7 @@ function updateTables(updateDataTable = true) {
         if (typeof val == 'number') {
           var cTd = $(`#service-data tbody tr.row${datum.row} td[key=${key}]`);
           if (!(nonAverageKey in keysFormats)) {
-            cTd.text(val);
+            cTd.text( fixIt(key, val) );
           } else {
             cTd.html('');
             //console.group(`"${key}" -> "${nonAverageKey}"`);
@@ -827,6 +853,7 @@ function updateTables(updateDataTable = true) {
             case 'row':
             case 'service-id':
             case 'service-name':
+            case 'service-type':
               break;
             case 'selected':
               totalsData.services += (val) ? 1 : 0;
@@ -834,7 +861,7 @@ function updateTables(updateDataTable = true) {
             case 'shielding':
             case 'waf':
             case 'edge-compute':
-            case 'edge-opto':
+            //case 'edge-opto':
               totalsData[`${key}s`] += (val) ? 1 : 0;
               break;
             default:
@@ -846,13 +873,13 @@ function updateTables(updateDataTable = true) {
     
   });
   
-  console.log(`${eTimer.time()} - Setting totals`)
+  if (DEBUG_UPDATE_TIME) console.log(`${eTimer.time()} - Setting totals`)
   // Display totals
   setTotals(totalsData);
 
-  console.log(`${eTimer.time(true)} - Done`)  
+  if (DEBUG_UPDATE_TIME) console.log(`${eTimer.time(true)} - Done`)  
   //disableControlsWhileGettingData(false);
-  console.groupEnd();
+  if (DEBUG_UPDATE_TIME) console.groupEnd();
 }
 
 /*
@@ -865,7 +892,7 @@ function updateTables() {
 
 
 function updateTotals(rowData = null) { /* OK */
-  const tableType = 'totals', idTbl = `service-${tableType}`, bResetData = (rowData == null), totalsData = {}, altKeys = {};
+  const tableType = 'totals', idTbl = `service-${tableType}`, bResetData = (rowData == null), totalsDataInfo = {}, altKeys = {};
   if (bResetData) rowData = {};
   appCfg.data.filter(datum => !('table' in datum) || datum.table == tableType).forEach( datum => {
     altKeys[datum.name] = ('alt-key' in datum) ? datum['alt-key'] : datum.name;
@@ -873,7 +900,7 @@ function updateTotals(rowData = null) { /* OK */
     let hasAverage = ('average' in datum && datum.average);
     let hasAdjust = ('adjust' in datum && datum.adjust);
     if (!hasAverage) {
-      totalsData[datum.name] = {selector:`#${idTbl} tbody tr td.${datum.name}`};
+      totalsDataInfo[datum.name] = {selector:`#${idTbl} tbody tr td.${datum.name}`};
       if (bResetData) {
         rowData[altKeys[datum.name]] = tmpDefault;
         if (hasAdjust) rowData[`${altKeys[datum.name]}-adjusted`] = tmpDefault;
@@ -881,8 +908,8 @@ function updateTotals(rowData = null) { /* OK */
     } else {
       /////// altKeys[`average-${datum.name}`] = altKeys[datum.name]; // ?????
       altKeys[`average-${datum.name}`] = `average-${altKeys[datum.name]}`; // ?????
-      totalsData[datum.name] = {selector:`#${idTbl} tbody tr td.${datum.name}.non-average`};
-      totalsData[`average-${datum.name}`] = {selector:`#${idTbl} tbody tr td.${datum.name}.average`};
+      totalsDataInfo[datum.name] = {selector:`#${idTbl} tbody tr td.${datum.name}.non-average`};
+      totalsDataInfo[`average-${datum.name}`] = {selector:`#${idTbl} tbody tr td.${datum.name}.average`};
       if (bResetData) {
         rowData[altKeys[datum.name]] = tmpDefault;
         rowData[altKeys[`average-${datum.name}`]] = tmpDefault;
@@ -894,33 +921,30 @@ function updateTotals(rowData = null) { /* OK */
     }
     if ('formats' in datum) {
       if (!datum.formats.startsWith('integer')) throw new Error(`formats for name="${datum.name}" expected to start with "integer" and does not: "${datum.formats}"`);
-      totalsData[datum.name].selector += ' span.integer';
-      totalsData[datum.name].formats = datum.formats;
+      totalsDataInfo[datum.name].selector += ' span.integer';
+      totalsDataInfo[datum.name].formats = datum.formats;
       if (hasAverage) {
-        totalsData[`average-${datum.name}`].selector += ' span.integer';
-        totalsData[`average-${datum.name}`].formats = datum.formats;
+        totalsDataInfo[`average-${datum.name}`].selector += ' span.integer';
+        totalsDataInfo[`average-${datum.name}`].formats = datum.formats;
       }
     }
   });
   
-  ///console.log(JSON.stringify(totalsData,null,'  '))
-  ///console.log(JSON.stringify(altKeys,null,'  '))
-  
-  Object.keys(totalsData).forEach( key => {
-    let selector = totalsData[key].selector;
+  Object.keys(totalsDataInfo).forEach( key => {
+    let selector = totalsDataInfo[key].selector;
     if ($(selector).length != 1) throw new Error(`bad selector: "${selector}" (${$(selector).length})`);
     let tmpName = (`${altKeys[key]}-adjusted` in rowData) ? `${altKeys[key]}-adjusted` : altKeys[key];
     
-    ///console.log(`${key} ${tmpName}`)
-    
     let incVal = rowData[tmpName];
     if (typeof d == "boolean") incVal = (incVal) ? 1 : 0;
-    let oldVal = Number($(selector).text()), newVal = incVal + ((bResetData) ? 0 : oldVal);
+    //let oldVal = Number($(selector).text()), newVal = incVal + ((bResetData) ? 0 : oldVal);
+    totalsData[key] = incVal + ((bResetData) ? 0 : totalsData[key])
+    let newVal = totalsData[key];
     if (!selector.endsWith('.integer')) {
-      $(selector).text(newVal);
+      $(selector).text( fixIt(key,newVal) );
     } else {
       selector = selector.replace(/\.integer$/,'');
-      totalsData[key].formats.split(',').forEach( formatType => {
+      totalsDataInfo[key].formats.split(',').forEach( formatType => {
         $(`${selector}.${formatType}`).text( formatBytes(formatType,newVal) );
       });
     }
@@ -957,7 +981,7 @@ function addDataTableRow(tableType, rowData = null) { /* OK */
       let tmpClass = `th-td display-category-${('category' in datum) ? datum.category.replace(/ /g,'-').toLowerCase() : 'default'}`;
       switch(datum.name) {
         case 'select-service':
-          $(`#${idTbl} tbody tr:last-of-type`).append($('<td>',{'has-waf':rowData.waf, class: tmpClass}));
+          $(`#${idTbl} tbody tr:last-of-type`).append($('<td>',{'has-waf':rowData.waf, class: `${tmpClass} service-select`}));
           $(`#${idTbl} tbody tr:last-of-type td`).append($('<input>',{type:'checkbox',class:datum.name,checked:rowData['selected'],disabled:true}));
           $(`#${idTbl} tbody tr:last-of-type td input`).click(function() { updateSelectedServices(this); });
           break;
@@ -976,13 +1000,12 @@ function addDataTableRow(tableType, rowData = null) { /* OK */
           
           if (! datum.formats) {
             if (typeof rowData[tmpName] != 'boolean')
-              lastTd.text(rowData[tmpName]);
+              lastTd.text( fixIt(tmpName, rowData[tmpName]) );
             else
               lastTd.text(rowData[tmpName] ? 'X' : '');
           } else {
             datum.formats.split(',').forEach(format => {
               lastTd.append($('<span>',{class:format, text:formatBytes(format,rowData[tmpName])}));
-              ////lastTd.children().last().text(formatBytes(format,rowData[tmpName]));
             });
           }
           
