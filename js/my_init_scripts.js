@@ -58,6 +58,7 @@ function quickSelectServices(e) { /* OK */
   $( `#service-data tbody td.${selectBy}.yes` ).parent().find( 'input[type=checkbox]' ).prop('checked', true);
   serviceData.forEach(datum => datum.selected = (typeof datum[selectBy] == "boolean") ? datum[selectBy] : (datum[selectBy] > 0));
   updateTables(false);
+  sortTableData('service-select','asc');
 }
 
 function exportData() {
@@ -478,7 +479,6 @@ function initialize() {
   // Set Dev Override if necessary
   
   if (/^get-((customer|service)-)?stats\.global\.ssl\.fastly\.net$/.test(location.hostname)) {
-    console.log('OK')
     $( '.obscure' ).removeClass('obscure');
     $( '.not-obscured' ).addClass('obscure');
     $( '#banner-content-obscure' ).attr('id','banner-content');

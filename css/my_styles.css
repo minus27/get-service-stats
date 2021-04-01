@@ -214,4 +214,13 @@ tbody th {
 #modal-settings-cookies input:not([type=checkbox]) {
   width: 100%;
 }
-    
+
+a[modal-id] {
+  white-space: nowrap !important;
+  color: #007bff;
+  font-weight: bold;
+}
+
+a[target=_blank] {
+  font-weight: bold;
+}
