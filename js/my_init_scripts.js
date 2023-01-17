@@ -153,6 +153,10 @@ function createStatsDataSourceTable() {
   });
   // HACK START
   $('.sdf-origin-rps').append(document.createTextNode(' / Days_of_Data / 24 / 60 / 60'));
+  $('.sdf-adjusted-origin-rps')
+    .html($('.sdf-adjusted-origin-rps').html().replace(/\+/,'-'))
+    .prepend(document.createTextNode('( '))
+    .append(document.createTextNode(' ) / Days_of_Data / 24 / 60 / 60'));
   // HACK END
 }
 
@@ -529,4 +533,5 @@ function initialize() {
   if (!devMode.status) $('#modal-help-disclaimer').modal('show');
   MODAL['modal-settings-cookies'].loadCookies();
   $('.save-to-cookie').change( MODAL['modal-settings-cookies'].saveToCookie );
+  $( "#api_key" ).focus();
 }

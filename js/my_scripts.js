@@ -9,7 +9,7 @@ var apiCallCounter = 0;
 var serviceData = [];
 var totalsData = {};
 
-function fixIt(k,n) { return (!['compute-time','origin-rps'].includes(k)) ? n : (n.toFixed(FIX_IT_DIGITS)); }
+function fixIt(k,n) { return (!['compute-time','origin-rps','adjusted-origin-rps'].includes(k)) ? n : (n.toFixed(FIX_IT_DIGITS)); }
 
 var appCfg = {
   data: [],
@@ -611,6 +611,7 @@ function stateTransition(state,nextState) { /* OK */
       
       // HACK START
       serviceDataValue['origin-rps'] = serviceDataValue['origin-rps'] / Number($('#elapsedDays').val()) / 86400; // 86400 = 24 * 60 * 60
+      serviceDataValue['adjusted-origin-rps'] = serviceDataValue['origin-rps'] - serviceDataValue['restarts'] / Number($('#elapsedDays').val()) / 86400; // 86400 = 24 * 60 * 60
       // HACK END
       
       let rowIndex = serviceData.length;

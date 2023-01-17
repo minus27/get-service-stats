@@ -134,6 +134,18 @@ const appCfgData = [
     category: 'Origin'
   },
   {
+    name: "restarts",
+    title: "Restarts",
+    stats: 'restarts',
+    category: 'Origin'
+  },
+  {
+    name: "adjusted-origin-rps",
+    title: "Origin RPS w/o Restarts",
+    stats: 'origin_fetches,restarts',
+    category: 'Origin'
+  },
+  {
     name: "backend-bandwidth",
     title: "Backend Request BW",
     formats: "integer,abbreviated,comma-separated",
