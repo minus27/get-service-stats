@@ -94,6 +94,7 @@
                     <label class="col-sm-4 col-form-label bg-light border-right">API Key</label>
                     <div class="col-sm-8 px-2">
                       <input type="password" name="password" class="form-control required-input load-from-cookie save-to-cookie" id="api_key">
+                      <input type="text" name="username" class="hidden" id="username" title="bogus input to fake out password manager">
                     </div>
               </div>  
             </div>
@@ -112,7 +113,7 @@
                 <div class="form-group mx-0 row border rounded">
                     <label class="col-sm-4 col-form-label bg-light border-right">Service ID</label>
                     <div class="col-sm-8 px-2">
-                      <input type="text" class="form-control input-id-type-dependent id-type load-from-cookie" id="service_id" readonly="readonly" prompt="Click to set Service ID">
+                      <input type="text" class="form-control input-id-type-dependent id-type load-from-cookie" id="service_id" readonly="readonly" prompt="Click to set Service ID" name="fred">
                     </div>
               </div>  
             </div>
