@@ -230,6 +230,26 @@ const appCfgData = [
     "alt-key": "shielding",
     category: 'Shielding'
   },
+  /* LOG STATS for REX */
+  {
+    name: "log-lines",
+    title: "Log Lines",
+    formats: "integer,comma-separated",
+    dataType: "requests",
+    average: true,
+    stats: 'log',
+    category: 'Log'
+  },
+  {
+    name: "log-bytes",
+    title: "Log Bytes",
+    formats: "integer,abbreviated,comma-separated",
+    dataType: "bytes",
+    average: true,
+    stats: 'log_bytes',
+    category: 'Log'
+  },
+  /* LOG STATS for REX */
   {
     name: "waf",
     title: "Fastly WAF",
